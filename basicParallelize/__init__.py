@@ -3,7 +3,7 @@ Includes an implementation of TQDM progress bars for both wrappers.
 """
 
 __all__ = ["parallelProcess", "parallelProcessTQDM", "multiThread", "multiThreadTQDM"]
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Joshua Beale <jbeale2023@gmail.com>"
 
 from ._parallelize import multiThread

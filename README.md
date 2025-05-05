@@ -1,18 +1,18 @@
 # basicParallelize: A Basic Wrapper for Multiprocessing
 ***
 
-``parallelize`` is designed to provide a user friendly wrapper for Python's multiprocessing library, including support for progress bars from [tqdm](https://github.com/tqdm/tqdm).
+``basicParallelize`` is designed to provide a user friendly wrapper for Python's multiprocessing library, including support for progress bars from [tqdm](https://github.com/tqdm/tqdm).
 
 ```python
     # Wrapper for multiprocessing.pool.ThreadPool
-    from parallelize import multiThread
+    from basicParallelize import multiThread
     output = multiThread(function, parameters)
 ```
 
 
 ```python
     # Wrapper for multiprocessing.Pool
-    from parallelize import parallelProcess
+    from basicParallelize import parallelProcess
     output = multiProcess(function, parameters)
 ```
 

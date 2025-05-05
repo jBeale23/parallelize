@@ -1,6 +1,6 @@
 [project]
 name = "basicParallelize"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Joshua Beale", email="jbeale2023@gmail.com" },
 ]
