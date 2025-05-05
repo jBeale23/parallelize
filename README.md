@@ -1,4 +1,4 @@
-# Parallelize: A Basic Wrapper for Multiprocessing
+# basicParallelize: A Basic Wrapper for Multiprocessing
 ***
 
 ``parallelize`` is designed to provide a user friendly wrapper for Python's multiprocessing library, including support for progress bars from [tqdm](https://github.com/tqdm/tqdm).
