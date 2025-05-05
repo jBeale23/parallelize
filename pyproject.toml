@@ -1,5 +1,5 @@
 [project]
-name = "paralellize"
+name = "basicParallelize"
 version = "1.0.0"
 authors = [
   { name="Joshua Beale", email="jbeale2023@gmail.com" },
@@ -26,4 +26,4 @@ dependencies = [
 license = "MIT"
 
 [project.urls]
-Homepage = "https://github.com/jBeale23/paralellize"
+Homepage = "https://github.com/jBeale23/parallelize"
