@@ -23,7 +23,7 @@ Both core functions can be run with a built in progress bars by instead using `m
 A recent version of Python 3 (3.8 or above) is required. You can probably run it or easily adapt it for older versions of Python, but I don't support any end-of-life Python versions. Beyond that, the only dependency is the `tqdm` library.
 
 ## Latest stable version on PyPi
-`pip install parallelize`
+`pip install basicParallelize`
 
 ## Latest stable version on GitHub
 `pip install git+https://github.com/jBeale23/parallelize.git@stable`
