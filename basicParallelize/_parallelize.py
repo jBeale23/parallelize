@@ -5,7 +5,7 @@ from typing import Any, Callable, Iterable, List
 
 
 def parallelProcess(
-    function: Callable[[Any],Any],
+    function: Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
     nJobs: int | None = None,
     chunkSize: int | None = None,
@@ -65,7 +65,7 @@ def parallelProcess(
 
 
 def multiThread(
-    function: Callable[[Any],Any],
+    function: Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
     nJobs: int | None = None,
     chunkSize: int | None = None,
