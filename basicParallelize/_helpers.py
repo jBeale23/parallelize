@@ -1,15 +1,15 @@
-from typing import Callable, Any
+from typing import Any, Callable, Iterable
 
 
-def _fStar(function: Callable[[Any],Any], args) -> Callable[[Any],Any]:
+def _fStar(function: Callable[[Any],Any], args: Iterable[Any] | Iterable[Iterable[Any]]) -> Callable[[Any],Any]:
     """Starmap a function with provided arguments.
     Used with TQDM variants of multiThreading and parallelProcess
 
     Parameters
     ----------
-    function : Callable
+    function : Callable[[Any],Any]
         The function to pass arguments to.
-    args : Iterable
+    args : Iterable[Any] | Iterable[Iterable[Any]]
         The arguments to unpack.
 
     Returns
