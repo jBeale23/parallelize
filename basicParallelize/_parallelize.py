@@ -1,13 +1,12 @@
 import multiprocessing
 import multiprocessing.pool
-from typing import Any, Callable, Iterable, List, Tuple
-
-from ._helpers import _determineMapType
+import inspect
+from typing import Any, Callable, Iterable, List
 
 
 def parallelProcess(
-    function: Callable,
-    args: Iterable[Any] | Iterable[Tuple[Any]],
+    function: Callable[[Any],Any],
+    args: Iterable[Any] | Iterable[Iterable[Any]],
     nJobs: int | None = None,
     chunkSize: int | None = None,
     overrideCPUCount: bool = False,
@@ -16,11 +15,11 @@ def parallelProcess(
 
     Parameters
     ----------
-    function: Callable
+    function: Callable[[Any],Any]
         The function to run in parallel.
-    args: Iterable[Any] | Iterable[Tuple[Any]]
+    args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
-        If the function requires more than one parameter, they must be provided in the form of an iterable of tuples.
+        If the function requires more than one parameter, they must be provided in the form of an iterable of Iterables.
     nJobs: int | None
         The number of processes to start simultaneously.
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
@@ -36,7 +35,7 @@ def parallelProcess(
 
     Returns
     -------
-    List
+    List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
 
@@ -54,7 +53,7 @@ def parallelProcess(
 
     with multiprocessing.Pool(processes=nj) as pool:
         print(f"Starting parallel pool with {nj} processes.".format(nj=nj))
-        if _determineMapType(function) is True:
+        if len(inspect.signature(function).parameters) > 1:
             result: List[Any] = pool.starmap(
                 func=function, iterable=args, chunksize=chunkSize
             )
@@ -66,8 +65,8 @@ def parallelProcess(
 
 
 def multiThread(
-    function: Callable,
-    args: Iterable[Any] | Iterable[Tuple[Any]],
+    function: Callable[[Any],Any],
+    args: Iterable[Any] | Iterable[Iterable[Any]],
     nJobs: int | None = None,
     chunkSize: int | None = None,
     overrideCPUCount: bool = False,
@@ -76,11 +75,11 @@ def multiThread(
 
     Parameters
     ----------
-    function: Callable
+    function: Callable[[Any],Any]
         The function to run in parallel.
-    args: Iterable[Any] | Iterable[Tuple[Any]]
+    args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
-        If the function requires more than one parameter, they must be provided in the form of an iterable of tuples.
+        If the function requires more than one parameter, they must be provided in the form of an iterable of Iterables.
     nJobs: int | None
         The number of threads to start simultaneously.
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
@@ -96,7 +95,7 @@ def multiThread(
 
     Returns
     -------
-    List
+    List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
 
@@ -114,7 +113,7 @@ def multiThread(
 
     with multiprocessing.pool.ThreadPool(processes=nj) as pool:
         print(f"Starting parallel pool with {nj} threads.".format(nj=nj))
-        if _determineMapType(function) is True:
+        if len(inspect.signature(function).parameters) > 1:
             result: List[Any] = pool.starmap(
                 func=function, iterable=args, chunksize=chunkSize
             )

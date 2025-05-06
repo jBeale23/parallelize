@@ -1,9 +1,9 @@
 import unittest
 
-from parallelize import multiThread
-from parallelize import multiThreadTQDM
-from parallelize import parallelProcess
-from parallelize import parallelProcessTQDM
+from basicParallelize import multiThread
+from basicParallelize import multiThreadTQDM
+from basicParallelize import parallelProcess
+from basicParallelize import parallelProcessTQDM
 
 
 def oneArgFunction(x):

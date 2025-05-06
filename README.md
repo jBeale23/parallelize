@@ -27,3 +27,6 @@ A recent version of Python 3 (3.8 or above) is required. You can probably run it
 
 ## Latest stable version on GitHub
 `pip install git+https://github.com/jBeale23/parallelize.git@stable`
+
+## Latest development version on GitHub
+`pip install git+https://github.com/jBeale23/parallelize.git@dev`
