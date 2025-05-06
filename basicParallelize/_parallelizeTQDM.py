@@ -1,16 +1,36 @@
 import multiprocessing
 import multiprocessing.pool
 import functools
+import inspect
 from typing import Any, Callable, Iterable, List
 
 import tqdm
 
-from ._helpers import _determineMapType
-from ._helpers import _fStar
+
+def _fStar(
+    function: Callable[[Any], Any],
+    args: Iterable[Any] | Iterable[Iterable[Any]],
+) -> Callable[[Any], Any]:
+    """Starmap a function with provided arguments.
+    Used with TQDM variants of multiThreading and parallelProcess
+
+    Parameters
+    ----------
+    function : Callable[[Any],Any]
+        The function to pass arguments to.
+    args : Iterable[Any] | Iterable[Iterable[Any]]
+        The arguments to unpack.
+
+    Returns
+    -------
+    function(*args) : Callable[[Any],Any]
+        The specified function with arguments unpacked and passed to it.
+    """
+    return function(*args)
 
 
 def parallelProcessTQDM(
-    function: Callable,
+    function: Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
     nJobs: int | None = None,
     chunkSize: int | None = None,
@@ -22,7 +42,7 @@ def parallelProcessTQDM(
 
     Parameters
     ----------
-    function: Callable
+    function: Callable[[Any],Any]
         The function to run in parallel.
     args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
@@ -44,7 +64,7 @@ def parallelProcessTQDM(
 
     Returns
     -------
-    List
+    List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
 
@@ -62,7 +82,7 @@ def parallelProcessTQDM(
 
     with multiprocessing.Pool(processes=nj) as pool:
         print(f"Starting parallel pool with {nj} processes.".format(nj=nj))
-        if _determineMapType(function) is True:
+        if len(inspect.signature(function).parameters) > 1:
             result: List[Any] = list(
                 tqdm.tqdm(
                     pool.imap(
@@ -86,7 +106,7 @@ def parallelProcessTQDM(
 
 
 def multiThreadTQDM(
-    function: Callable,
+    function: Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
     nJobs: int | None = None,
     chunkSize: int | None = None,
@@ -98,7 +118,7 @@ def multiThreadTQDM(
 
     Parameters
     ----------
-    function: Callable
+    function: Callable[[Any],Any]
         The function to run in parallel.
     args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
@@ -120,7 +140,7 @@ def multiThreadTQDM(
 
     Returns
     -------
-    List
+    List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
 
@@ -138,7 +158,7 @@ def multiThreadTQDM(
 
     with multiprocessing.pool.ThreadPool(processes=nj) as pool:
         print(f"Starting parallel pool with {nj} threads.".format(nj=nj))
-        if _determineMapType(function) is True:
+        if len(inspect.signature(function).parameters) > 1:
             result: List[Any] = list(
                 tqdm.tqdm(
                     pool.imap(
