@@ -16,6 +16,7 @@ def twoArgFunction(x, y):
 
 class TestParallelize(unittest.TestCase):
     """Test output equivalency of multithreading and parallel processing to the results of serial execution of a function.
+
     Known Failure States:
         TypeError: Attempting to pass an incorrect number of arguments to a function.
         AttrributeError: Attempting to pass a local function to a process pool.

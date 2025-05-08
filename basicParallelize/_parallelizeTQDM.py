@@ -47,17 +47,16 @@ def parallelProcessTQDM(
         The function to run in parallel.
     args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
-        If the function requires more than one parameter, they must be provided in the form of an iterable of Iterables.
+        If the function requires more than one parameter, they must be provided in the form of an iterable of iterables.
     nJobs: int | None
         The number of processes to start simultaneously.
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
-        See https://github.com/python/cpython/issues/71090 with respect to the possible Windows error.
         If unspecified, defaults to system logical CPU count.
     chunkSize: int | None
         The number of function executions on the iterable to pass to each process.
         If unspecified, defaults to heuristic calculation of divmod(len(args), nJobs * 4).
     overrideCPUCount: bool
-        If set to True, the user provided nJobs is used as the number of threads to start simultaneously.
+        If set to True, the user provided nJobs is used as the number of processes to start simultaneously.
         This is done regardless of system resources available or possible Windows errors.
         Defaults to False.
     description: str | None
@@ -71,11 +70,18 @@ def parallelProcessTQDM(
 
     if nJobs is None:
         nJobs: int = multiprocessing.cpu_count()
+
     if overrideCPUCount is True:
         nj: int = nJobs
     else:
+        # The cap at 61 is due to possible windows errors.
+        # See https://github.com/python/cpython/issues/71090
         nj: int = min(nJobs, multiprocessing.cpu_count(), 61)
 
+    # Used as a default to reduce worker overhead.
+    # Consider specifying smaller chunk sizes for small datasets.
+    # See the below link for a discussion of the chosen default heuristic.
+    # https://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize
     if chunkSize is None:
         chunkSize, extra = divmod(len(args), nj * 4)
         if extra:
@@ -123,14 +129,13 @@ def multiThreadTQDM(
         The function to run in parallel.
     args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
-        If the function requires more than one parameter, they must be provided in the form of an iterable of Iterables.
+        If the function requires more than one parameter, they must be provided in the form of an iterable of iterables.
     nJobs: int | None
         The number of threads to start simultaneously.
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
-        See https://github.com/python/cpython/issues/71090 with respect to the possible Windows error.
         If unspecified, defaults to system logical CPU count.
     chunkSize: int | None
-        The number of function executions on the iterable to pass to each thread.
+        The number of function executions on the iterable to pass to each process.
         If unspecified, defaults to heuristic calculation of divmod(len(args), nJobs * 4).
     overrideCPUCount: bool
         If set to True, the user provided nJobs is used as the number of threads to start simultaneously.
@@ -151,7 +156,14 @@ def multiThreadTQDM(
     if overrideCPUCount is True:
         nj: int = nJobs
     else:
+        # The cap at 61 is due to possible windows errors.
+        # See https://github.com/python/cpython/issues/71090
         nj: int = min(nJobs, multiprocessing.cpu_count(), 61)
+
+    # Used as a default to reduce worker overhead.
+    # Consider specifying smaller chunk sizes for small datasets.
+    # See the below link for a discussion of the chosen default heuristic.
+    # https://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize
     if chunkSize is None:
         chunkSize, extra = divmod(len(args), nj * 4)
         if extra:
