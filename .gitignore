@@ -5,3 +5,5 @@
 /dist
 /src/basicParallelize.egg-info
 /build
+reports/coverage/coverage.xml
+reports/tests/junit.xml
