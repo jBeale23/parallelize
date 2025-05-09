@@ -1,4 +1,10 @@
 # basicParallelize: A Basic Wrapper for Multiprocessing
+[![pypi](http://img.shields.io/pypi/v/basicParallelize.png)](https://pypi.python.org/pypi/basicParallelize)
+[![Supported Python Versions](https://img.shields.io/pypi/pyversions/basicParallelize.svg)](https://pypi.python.org/pypi/basicParallelize/)
+[![PyPI Downloads](https://static.pepy.tech/badge/basicparallelize)](https://pepy.tech/projects/basicparallelize)
+[![License](https://img.shields.io/pypi/l/basicParallelize.svg)](https://pypi.python.org/pypi/basicParallelize/)
+![Tests Status](./reports/tests/tests-badge.svg?dummy=8484744)
+![Coverage Status](./reports/coverage/coverage-badge.svg?dummy=8484744)
 ***
 
 ``basicParallelize`` is designed to provide a user friendly wrapper for Python's multiprocessing library, including support for progress bars from [tqdm](https://github.com/tqdm/tqdm).

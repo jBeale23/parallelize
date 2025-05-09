@@ -1,6 +1,6 @@
 [project]
 name = "basicParallelize"
-version = "1.0.3"
+version = "1.0.4"
 authors = [
   { name="Joshua Beale", email="jbeale2023@gmail.com" },
 ]
@@ -16,6 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Topic :: Utilities",
 ]
@@ -23,7 +24,7 @@ keywords = ["parallel"]
 dependencies = [
     "tqdm>=2.0.0"
 ]
-license = "MIT"
+license = { text = "MIT" }
 
 [project.urls]
 Homepage = "https://github.com/jBeale23/parallelize"

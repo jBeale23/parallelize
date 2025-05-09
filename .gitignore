@@ -1,2 +1,9 @@
+.coverage
+.nox
+.pytest_cache
+*__pycache__
 /dist
-/basicParallelize.egg-info
+/src/basicParallelize.egg-info
+/build
+reports/coverage/coverage.xml
+reports/tests/junit.xml
