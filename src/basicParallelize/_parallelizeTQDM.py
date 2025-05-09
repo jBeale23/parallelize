@@ -3,6 +3,7 @@ import multiprocessing
 import multiprocessing.pool
 import functools
 import inspect
+import warnings
 from typing import Any, Callable, Iterable, List
 
 import tqdm
@@ -67,6 +68,12 @@ def parallelProcessTQDM(
     List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
+
+    if nJobs is None and overrideCPUCount is True:
+        warnings.warn(
+            "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
+            RuntimeWarning,
+        )
 
     if nJobs is None:
         nJobs: int = multiprocessing.cpu_count()
@@ -149,6 +156,12 @@ def multiThreadTQDM(
     List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
+
+    if nJobs is None and overrideCPUCount is True:
+        warnings.warn(
+            "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
+            RuntimeWarning,
+        )
 
     if nJobs is None:
         nJobs: int = multiprocessing.cpu_count()
