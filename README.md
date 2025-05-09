@@ -3,8 +3,8 @@
 [![Supported Python Versions](https://img.shields.io/pypi/pyversions/basicParallelize.svg)](https://pypi.python.org/pypi/basicParallelize/)
 [![PyPI Downloads](https://static.pepy.tech/badge/basicparallelize)](https://pepy.tech/projects/basicparallelize)
 [![License](https://img.shields.io/pypi/l/basicParallelize.svg)](https://pypi.python.org/pypi/basicParallelize/)
-![Tests Status](https://github.com/jBeale23/parallelize/tree/stable/reports/tests/tests-badge.svg?dummy=8484744)
-![Coverage Status](https://github.com/jBeale23/parallelize/tree/stable/reports/coverage/coverage-badge.svg?dummy=8484744)
+![Tests Status](https://raw.githubusercontent.com/jBeale23/parallelize/refs/heads/stable/reports/tests/tests-badge.svg?dummy=8484744)
+![Coverage Status](https://raw.githubusercontent.com/jBeale23/parallelize/refs/heads/stable/reports/coverage/coverage-badge.svg?dummy=8484744)
 ***
 
 ``basicParallelize`` is designed to provide a user friendly wrapper for Python's multiprocessing library, including support for progress bars from [tqdm](https://github.com/tqdm/tqdm).
