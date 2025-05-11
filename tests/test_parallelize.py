@@ -260,7 +260,7 @@ class TestKnownFailStates:
         TypeError: Attempting to pass an incorrect number of arguments to a function.
         AttrributeError: Attempting to pass a local function to a process pool.
     The following warnings are known:
-        RunTimeWarning: Setting overrideCPUCount to True while nJobs is unset.
+        UserWarning: Setting overrideCPUCount to True while nJobs is unset.
     """
 
     def test_TypeErrorTwoArgsToOneArgFunction(self):
@@ -311,35 +311,35 @@ class TestKnownFailStates:
 
     def test_unsetnJobsoverrideCPUCountIsTrue(self):
         """Confirms that a warning is raised if nJobs is unset while overrideCPUCount is True."""
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             multiThread(
                 function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
             )
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             multiThread(
                 function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
             )
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             multiThreadTQDM(
                 function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
             )
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             multiThreadTQDM(
                 function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
             )
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             parallelProcess(
                 function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
             )
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             parallelProcess(
                 function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
             )
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             parallelProcessTQDM(
                 function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
             )
-        with pytest.warns(RuntimeWarning):
+        with pytest.warns(UserWarning):
             parallelProcessTQDM(
                 function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
             )
