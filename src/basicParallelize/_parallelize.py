@@ -1,14 +1,18 @@
+"""Wrappers for multiprocessing.Pool and multiprocessing.pool.ThreadPool with TQDM progress bar integration."""
+
 from __future__ import annotations
 import multiprocessing
 import multiprocessing.pool
 import inspect
-import warnings
 from typing import Any, Callable, Iterable, List
+
+from ._helpers import _determineNJobs, _determineChunkSize
 
 
 def parallelProcess(
     function: Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
+    *,
     nJobs: int | None = None,
     chunkSize: int | None = None,
     overrideCPUCount: bool = False,
@@ -40,33 +44,11 @@ def parallelProcess(
         The outputs of the specified function across the iterable, in the provided order.
     """
 
-    if nJobs is None and overrideCPUCount is True:
-        warnings.warn(
-            "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
-            RuntimeWarning,
-        )
+    nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
 
-    if nJobs is None:
-        nJobs: int = multiprocessing.cpu_count()
+    chunkSize = _determineChunkSize(args=args, nJobs=nJobs, chunkSize=chunkSize)
 
-    if overrideCPUCount is True:
-        nj: int = nJobs
-    else:
-        # The cap at 61 is due to possible windows errors.
-        # See https://github.com/python/cpython/issues/71090
-        nj: int = min(nJobs, multiprocessing.cpu_count(), 61)
-
-    # Used as a default to reduce worker overhead.
-    # Consider specifying smaller chunk sizes for small datasets.
-    # See the below link for a discussion of the chosen default heuristic.
-    # https://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize
-    if chunkSize is None:
-        chunkSize, extra = divmod(len(args), nj * 4)
-        if extra:
-            chunkSize += 1
-
-    with multiprocessing.Pool(processes=nj) as pool:
-        print(f"Starting parallel pool with {nj} processes.".format(nj=nj))
+    with multiprocessing.Pool(processes=nJobs) as pool:
         if len(inspect.signature(function).parameters) > 1:
             result: List[Any] = pool.starmap(
                 func=function, iterable=args, chunksize=chunkSize
@@ -81,6 +63,7 @@ def parallelProcess(
 def multiThread(
     function: Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
+    *,
     nJobs: int | None = None,
     chunkSize: int | None = None,
     overrideCPUCount: bool = False,
@@ -112,33 +95,11 @@ def multiThread(
         The outputs of the specified function across the iterable, in the provided order.
     """
 
-    if nJobs is None and overrideCPUCount is True:
-        warnings.warn(
-            "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
-            RuntimeWarning,
-        )
+    nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
 
-    if nJobs is None:
-        nJobs: int = multiprocessing.cpu_count()
+    chunkSize = _determineChunkSize(args=args, nJobs=nJobs, chunkSize=chunkSize)
 
-    if overrideCPUCount is True:
-        nj: int = nJobs
-    else:
-        # The cap at 61 is due to possible windows errors.
-        # See https://github.com/python/cpython/issues/71090
-        nj: int = min(nJobs, multiprocessing.cpu_count(), 61)
-
-    # Used as a default to reduce worker overhead.
-    # Consider specifying smaller chunk sizes for small datasets.
-    # See the below link for a discussion of the chosen default heuristic.
-    # https://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize
-    if chunkSize is None:
-        chunkSize, extra = divmod(len(args), nj * 4)
-        if extra:
-            chunkSize += 1
-
-    with multiprocessing.pool.ThreadPool(processes=nj) as pool:
-        print(f"Starting parallel pool with {nj} threads.".format(nj=nj))
+    with multiprocessing.pool.ThreadPool(processes=nJobs) as pool:
         if len(inspect.signature(function).parameters) > 1:
             result: List[Any] = pool.starmap(
                 func=function, iterable=args, chunksize=chunkSize
