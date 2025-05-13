@@ -54,7 +54,7 @@ def parallelProcess(
         result = _flexibleMap(
             pool=pool, function=function, args=args, chunkSize=chunkSize
         )
-        
+
     return result
 
 
