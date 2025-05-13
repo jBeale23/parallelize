@@ -1,39 +1,19 @@
+"""Wrappers for multiprocessing.Pool and multiprocessing.pool.ThreadPool with TQDM progress bar integration."""
+
 from __future__ import annotations
 import multiprocessing
 import multiprocessing.pool
-import functools
-import inspect
-import warnings
 from typing import Any, Callable, Iterable, List
 
-import tqdm
+from ._helpers import _determineNJobs, _determineChunkSize, _flexibleMapTQDM
 
 
-def _fStar(
-    function: Callable[[Any], Any],
+# R0913 Too-Many-Arguments warning is disabled as providing a single contact point for end users is the goal.
+# Sensible defaults are provided to reduce mental burden while still allowing customization for advanced use.
+def parallelProcessTQDM(  # pylint: disable=too-many-arguments
+    function: Callable[[], Any] | Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
-) -> Callable[[Any], Any]:
-    """Starmap a function with provided arguments.
-    Used with TQDM variants of multiThreading and parallelProcess
-
-    Parameters
-    ----------
-    function : Callable[[Any],Any]
-        The function to pass arguments to.
-    args : Iterable[Any] | Iterable[Iterable[Any]]
-        The arguments to unpack.
-
-    Returns
-    -------
-    function(*args) : Callable[[Any],Any]
-        The specified function with arguments unpacked and passed to it.
-    """
-    return function(*args)
-
-
-def parallelProcessTQDM(
-    function: Callable[[Any], Any],
-    args: Iterable[Any] | Iterable[Iterable[Any]],
+    *,
     nJobs: int | None = None,
     chunkSize: int | None = None,
     overrideCPUCount: bool = False,
@@ -44,11 +24,12 @@ def parallelProcessTQDM(
 
     Parameters
     ----------
-    function: Callable[[Any],Any]
+    function: Callable[[], Any] | Callable[[Any], Any]
         The function to run in parallel.
     args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
         If the function requires more than one parameter, they must be provided in the form of an iterable of iterables.
+        If the function requires no parameters, the length of the iterable determines the number of function executions.
     nJobs: int | None
         The number of processes to start simultaneously.
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
@@ -69,59 +50,31 @@ def parallelProcessTQDM(
         The outputs of the specified function across the iterable, in the provided order.
     """
 
-    if nJobs is None and overrideCPUCount is True:
-        warnings.warn(
-            "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
-            RuntimeWarning,
+    nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
+
+    chunkSize = _determineChunkSize(
+        function=function, args=args, nJobs=nJobs, chunkSize=chunkSize
+    )
+
+    with multiprocessing.Pool(processes=nJobs) as pool:
+        print(f"Starting parallel pool with {nJobs} processes.".format(nJobs=nJobs))
+        result = _flexibleMapTQDM(
+            pool=pool,
+            function=function,
+            args=args,
+            chunkSize=chunkSize,
+            description=description,
         )
 
-    if nJobs is None:
-        nJobs: int = multiprocessing.cpu_count()
-
-    if overrideCPUCount is True:
-        nj: int = nJobs
-    else:
-        # The cap at 61 is due to possible windows errors.
-        # See https://github.com/python/cpython/issues/71090
-        nj: int = min(nJobs, multiprocessing.cpu_count(), 61)
-
-    # Used as a default to reduce worker overhead.
-    # Consider specifying smaller chunk sizes for small datasets.
-    # See the below link for a discussion of the chosen default heuristic.
-    # https://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize
-    if chunkSize is None:
-        chunkSize, extra = divmod(len(args), nj * 4)
-        if extra:
-            chunkSize += 1
-
-    with multiprocessing.Pool(processes=nj) as pool:
-        print(f"Starting parallel pool with {nj} processes.".format(nj=nj))
-        if len(inspect.signature(function).parameters) > 1:
-            result: List[Any] = list(
-                tqdm.tqdm(
-                    pool.imap(
-                        func=functools.partial(_fStar, function),
-                        iterable=args,
-                        chunksize=chunkSize,
-                    ),
-                    total=len(args),
-                    desc=description,
-                )
-            )
-        else:
-            result: List[Any] = list(
-                tqdm.tqdm(
-                    pool.imap(func=function, iterable=args, chunksize=chunkSize),
-                    total=len(args),
-                    desc=description,
-                )
-            )
     return result
 
 
-def multiThreadTQDM(
-    function: Callable[[Any], Any],
+# R0913 Too-Many-Arguments warning is disabled as providing a single contact point for end users is the goal.
+# Sensible defaults are provided to reduce mental burden while still allowing customization for advanced use.
+def multiThreadTQDM(  # pylint: disable=too-many-arguments
+    function: Callable[[], Any] | Callable[[Any], Any],
     args: Iterable[Any] | Iterable[Iterable[Any]],
+    *,
     nJobs: int | None = None,
     chunkSize: int | None = None,
     overrideCPUCount: bool = False,
@@ -132,11 +85,12 @@ def multiThreadTQDM(
 
     Parameters
     ----------
-    function: Callable[[Any],Any]
+    function: Callable[[], Any] | Callable[[Any], Any]
         The function to run in parallel.
     args: Iterable[Any] | Iterable[Iterable[Any]]
         An iterable of parameters to pass to the function.
         If the function requires more than one parameter, they must be provided in the form of an iterable of iterables.
+        If the function requires no parameters, the length of the iterable determines the number of function executions.
     nJobs: int | None
         The number of threads to start simultaneously.
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
@@ -157,51 +111,20 @@ def multiThreadTQDM(
         The outputs of the specified function across the iterable, in the provided order.
     """
 
-    if nJobs is None and overrideCPUCount is True:
-        warnings.warn(
-            "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
-            RuntimeWarning,
+    nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
+
+    chunkSize = _determineChunkSize(
+        function=function, args=args, nJobs=nJobs, chunkSize=chunkSize
+    )
+
+    with multiprocessing.pool.ThreadPool(processes=nJobs) as pool:
+        print(f"Starting parallel pool with {nJobs} threads.".format(nJobs=nJobs))
+        result = _flexibleMapTQDM(
+            pool=pool,
+            function=function,
+            args=args,
+            chunkSize=chunkSize,
+            description=description,
         )
 
-    if nJobs is None:
-        nJobs: int = multiprocessing.cpu_count()
-
-    if overrideCPUCount is True:
-        nj: int = nJobs
-    else:
-        # The cap at 61 is due to possible windows errors.
-        # See https://github.com/python/cpython/issues/71090
-        nj: int = min(nJobs, multiprocessing.cpu_count(), 61)
-
-    # Used as a default to reduce worker overhead.
-    # Consider specifying smaller chunk sizes for small datasets.
-    # See the below link for a discussion of the chosen default heuristic.
-    # https://stackoverflow.com/questions/53751050/multiprocessing-understanding-logic-behind-chunksize
-    if chunkSize is None:
-        chunkSize, extra = divmod(len(args), nj * 4)
-        if extra:
-            chunkSize += 1
-
-    with multiprocessing.pool.ThreadPool(processes=nj) as pool:
-        print(f"Starting parallel pool with {nj} threads.".format(nj=nj))
-        if len(inspect.signature(function).parameters) > 1:
-            result: List[Any] = list(
-                tqdm.tqdm(
-                    pool.imap(
-                        func=functools.partial(_fStar, function),
-                        iterable=args,
-                        chunksize=chunkSize,
-                    ),
-                    total=len(args),
-                    desc=description,
-                )
-            )
-        else:
-            result: List[Any] = list(
-                tqdm.tqdm(
-                    pool.imap(func=function, iterable=args, chunksize=chunkSize),
-                    total=len(args),
-                    desc=description,
-                )
-            )
     return result

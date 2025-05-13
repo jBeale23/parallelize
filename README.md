@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/pypi/l/basicParallelize.svg)](https://pypi.python.org/pypi/basicParallelize/)
 ![Tests Status](https://raw.githubusercontent.com/jBeale23/parallelize/refs/heads/stable/reports/tests/tests-badge.svg?dummy=8484744)
 ![Coverage Status](https://raw.githubusercontent.com/jBeale23/parallelize/refs/heads/stable/reports/coverage/coverage-badge.svg?dummy=8484744)
+[![Nox](https://img.shields.io/badge/%F0%9F%A6%8A-Nox-D85E00.svg)](https://github.com/wntrblm/nox)
 ***
 
 ``basicParallelize`` is designed to provide a user friendly wrapper for Python's multiprocessing library, including support for progress bars from [tqdm](https://github.com/tqdm/tqdm).

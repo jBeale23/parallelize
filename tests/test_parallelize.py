@@ -13,19 +13,8 @@ from basicParallelize import parallelProcess
 from basicParallelize import parallelProcessTQDM
 
 # Constant Inputs for Output Equivalency Testing
-ARGSONEARGFUNCTION = [
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-]
+ARGSZEROARGFUNCTION = range(11)
+ARGSONEARGFUNCTION = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 ARGSTWOARGFUNCTION = [
     (0, 0),
     (1, 1),
@@ -40,217 +29,94 @@ ARGSTWOARGFUNCTION = [
     (10, 10),
 ]
 
-# Constant Outputs for Output Equivalency Testing
-OUTPUTONEARGFUNCTION = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
-OUTPUTTWOARGFUNCTION = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-
 
 # Global Functions for Output Equivalency Testing
-def oneArgFunction(x):
+def zeroArgFunction() -> int:
+    return 1
+
+
+def oneArgFunction(x: int) -> int:
     return x**2
 
 
-def twoArgFunction(x, y):
+def twoArgFunction(x: int, y: int) -> int:
     return x + y
+
+
+# Serial Outputs for Output Equivalency Testing
+OUTPUTZEROARGFUNCTION = [zeroArgFunction() for __ in ARGSZEROARGFUNCTION]
+OUTPUTONEARGFUNCTION = [oneArgFunction(i) for i in ARGSONEARGFUNCTION]
+OUTPUTTWOARGFUNCTION = [twoArgFunction(*i) for i in ARGSTWOARGFUNCTION]
+
+
+# Metafunction for parametrizing tests
+def pytest_generate_tests(metafunc):
+    if "threading" in metafunc.fixturenames:
+        metafunc.parametrize("threading", [multiThread, multiThreadTQDM])
+    if "processes" in metafunc.fixturenames:
+        metafunc.parametrize("processes", [parallelProcess, parallelProcessTQDM])
+    if "parallelism" in metafunc.fixturenames:
+        metafunc.parametrize(
+            "parallelism",
+            [multiThread, multiThreadTQDM, parallelProcess, parallelProcessTQDM],
+        )
+    if "function" in metafunc.fixturenames:
+        metafunc.parametrize(
+            "function, args, output",
+            [
+                (zeroArgFunction, ARGSZEROARGFUNCTION, OUTPUTZEROARGFUNCTION),
+                (oneArgFunction, ARGSONEARGFUNCTION, OUTPUTONEARGFUNCTION),
+                (twoArgFunction, ARGSTWOARGFUNCTION, OUTPUTTWOARGFUNCTION),
+            ],
+        )
 
 
 class TestOutputEquivalency:
     """Tests all function variants for equivalency to serial computation."""
 
-    def test_multiThreadOneArg(self):
-        assert (
-            multiThread(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-            == OUTPUTONEARGFUNCTION
-        )
-
-    def test_multiThreadTwoArgs(self):
-        assert (
-            multiThread(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
-            == OUTPUTTWOARGFUNCTION
-        )
-
-    def test_multiThreadTQDMOneArg(self):
-        assert (
-            multiThreadTQDM(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-            == OUTPUTONEARGFUNCTION
-        )
-
-    def test_multiThreadTQDMTwoArgs(self):
-        assert (
-            multiThreadTQDM(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
-            == OUTPUTTWOARGFUNCTION
-        )
-
-    def test_parallelProcessOneArg(self):
-        assert (
-            parallelProcess(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-            == OUTPUTONEARGFUNCTION
-        )
-
-    def test_parallelProcessTwoArgs(self):
-        assert (
-            parallelProcess(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
-            == OUTPUTTWOARGFUNCTION
-        )
-
-    def test_parallelProcessTQDMOneArg(self):
-        assert (
-            parallelProcessTQDM(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-            == OUTPUTONEARGFUNCTION
-        )
-
-    def test_parallelProcessTQDMTwoArgs(self):
-        assert (
-            parallelProcessTQDM(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
-            == OUTPUTTWOARGFUNCTION
-        )
+    def test_outPutEquivalency(self, parallelism, function, args, output):
+        assert parallelism(function=function, args=args) == output
 
 
 class TestBranchPoints:
     """Ensures that all branch points are reached."""
 
-    def test_setnJobsoverrideCPUCountIsFalse(self):
+    def test_setnJobsoverrideCPUCountIsFalse(self, parallelism, function, args, output):
         """Confirms that nJobs can be set without errors while overrideCPUCount is False."""
-        multiThread(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
-        )
-        multiThread(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
-        )
-        multiThreadTQDM(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
-        )
-        multiThreadTQDM(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
-        )
-        parallelProcess(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
-        )
-        parallelProcess(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
-        )
-        parallelProcessTQDM(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
-        )
-        parallelProcessTQDM(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=False,
+        assert (
+            parallelism(
+                function=function,
+                args=args,
+                nJobs=2,
+                overrideCPUCount=False,
+            )
+            == output
         )
 
-    def test_setnJobsoverrideCPUCountIsTrue(self):
+    def test_setnJobsoverrideCPUCountIsTrue(self, parallelism, function, args, output):
         """Confirms that nJobs can be set without errors while overrideCPUCount is True."""
-        multiThread(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
-        )
-        multiThread(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
-        )
-        multiThreadTQDM(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
-        )
-        multiThreadTQDM(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
-        )
-        parallelProcess(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
-        )
-        parallelProcess(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
-        )
-        parallelProcessTQDM(
-            function=oneArgFunction,
-            args=ARGSONEARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
-        )
-        parallelProcessTQDM(
-            function=twoArgFunction,
-            args=ARGSTWOARGFUNCTION,
-            nJobs=2,
-            overrideCPUCount=True,
+        assert (
+            parallelism(
+                function=function,
+                args=args,
+                nJobs=2,
+                overrideCPUCount=True,
+            )
+            == output
         )
 
-    def test_setchunkSize(self):
+    def test_setchunkSize(self, parallelism, function, args, output):
         """Confirms that chunk sizes can be set without errors."""
-        multiThread(function=oneArgFunction, args=ARGSONEARGFUNCTION, chunkSize=1)
-        multiThread(function=twoArgFunction, args=ARGSTWOARGFUNCTION, chunkSize=1)
-        multiThreadTQDM(function=oneArgFunction, args=ARGSONEARGFUNCTION, chunkSize=1)
-        multiThreadTQDM(function=twoArgFunction, args=ARGSTWOARGFUNCTION, chunkSize=1)
-        parallelProcess(function=oneArgFunction, args=ARGSONEARGFUNCTION, chunkSize=1)
-        parallelProcess(function=twoArgFunction, args=ARGSTWOARGFUNCTION, chunkSize=1)
-        parallelProcessTQDM(
-            function=oneArgFunction, args=ARGSONEARGFUNCTION, chunkSize=1
-        )
-        parallelProcessTQDM(
-            function=twoArgFunction, args=ARGSTWOARGFUNCTION, chunkSize=1
-        )
+        if function != zeroArgFunction:
+            assert parallelism(function=function, args=args, chunkSize=1) == output
 
-    def test_autochunkSizeWithExtra(self):
+    def test_autochunkSizeWithExtra(self, parallelism, function, args, output):
         """Confirms that chunk sizes can be left to default values when args don't divide evenly."""
-        multiThread(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-        multiThread(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
-        multiThreadTQDM(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-        multiThreadTQDM(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
-        parallelProcess(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-        parallelProcess(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
-        parallelProcessTQDM(function=oneArgFunction, args=ARGSONEARGFUNCTION)
-        parallelProcessTQDM(function=twoArgFunction, args=ARGSTWOARGFUNCTION)
+        assert parallelism(function=function, args=args) == output
 
-    def test_autochunkSizeNoExtra(self):
+    def test_autochunkSizeNoExtra(self, parallelism, function, args, output):
         """Confirms that chunk sizes can be left to default values when args divide evenly."""
-        multiThread(function=oneArgFunction, args=ARGSONEARGFUNCTION[:8], nJobs=2)
-        multiThread(function=twoArgFunction, args=ARGSTWOARGFUNCTION[:8], nJobs=2)
-        multiThreadTQDM(function=oneArgFunction, args=ARGSONEARGFUNCTION[:8], nJobs=2)
-        multiThreadTQDM(function=twoArgFunction, args=ARGSTWOARGFUNCTION[:8], nJobs=2)
-        parallelProcess(function=oneArgFunction, args=ARGSONEARGFUNCTION[:8], nJobs=2)
-        parallelProcess(function=twoArgFunction, args=ARGSTWOARGFUNCTION[:8], nJobs=2)
-        parallelProcessTQDM(
-            function=oneArgFunction, args=ARGSONEARGFUNCTION[:8], nJobs=2
-        )
-        parallelProcessTQDM(
-            function=twoArgFunction, args=ARGSTWOARGFUNCTION[:8], nJobs=2
-        )
+        assert parallelism(function=function, args=args[:8], nJobs=2) == output[:8]
 
 
 class TestKnownFailStates:
@@ -260,86 +126,85 @@ class TestKnownFailStates:
         TypeError: Attempting to pass an incorrect number of arguments to a function.
         AttrributeError: Attempting to pass a local function to a process pool.
     The following warnings are known:
-        RunTimeWarning: Setting overrideCPUCount to True while nJobs is unset.
+        UserWarning: Setting overrideCPUCount to True while nJobs is unset.
     """
 
-    def test_TypeErrorTwoArgsToOneArgFunction(self):
+    def test_TypeErrorTwoArgsToOneArgFunction(self, parallelism):
         """Confirms that one argument functions don't accept multiple arguments."""
         with pytest.raises(TypeError):
-            multiThread(function=oneArgFunction, args=ARGSTWOARGFUNCTION)
-        with pytest.raises(TypeError):
-            multiThreadTQDM(function=oneArgFunction, args=ARGSTWOARGFUNCTION)
-        with pytest.raises(TypeError):
-            parallelProcess(function=oneArgFunction, args=ARGSTWOARGFUNCTION)
-        with pytest.raises(TypeError):
-            parallelProcessTQDM(function=oneArgFunction, args=ARGSTWOARGFUNCTION)
+            parallelism(function=oneArgFunction, args=ARGSTWOARGFUNCTION)
 
-    def test_TypeErrorOneArgToTwoArgFunction(self):
+    def test_TypeErrorOneArgToTwoArgFunction(self, parallelism):
         """Confirms that multi argument functions don't accept only one argument."""
         with pytest.raises(TypeError):
-            multiThread(twoArgFunction, args=ARGSONEARGFUNCTION)
-        with pytest.raises(TypeError):
-            multiThreadTQDM(twoArgFunction, args=ARGSONEARGFUNCTION)
-        with pytest.raises(TypeError):
-            parallelProcess(twoArgFunction, args=ARGSONEARGFUNCTION)
-        with pytest.raises(TypeError):
-            parallelProcessTQDM(twoArgFunction, args=ARGSONEARGFUNCTION)
+            parallelism(function=twoArgFunction, args=ARGSONEARGFUNCTION)
 
-    def test_LocalFunctions(self):
-        """Confirms that local functions can be safely passed to thread pools.
-        Also confirms that local functions fail to pickle and thus aren't passed to process pools.
-        """
+    def test_LocalZeroArgFunctionThreads(self, threading):
+        """Confirms that local zero arg functions can be safely passed to thread pools."""
+
+        def localZeroArgFunction():
+            pass
+
+        threading(function=localZeroArgFunction, args=ARGSZEROARGFUNCTION)
+
+    def test_LocalOneArgFunctionThreads(self, threading):
+        """Confirms that local one arg functions can be safely passed to thread pools."""
 
         def localOneArgFunction(x):
             pass
 
+        threading(function=localOneArgFunction, args=ARGSONEARGFUNCTION)
+
+    def test_LocalTwoArgFunctionThreads(self, threading):
+        """Confirms that local two arg functions can be safely passed to thread pools."""
+
         def localTwoArgFunction(x, y):
             pass
 
-        multiThread(function=localOneArgFunction, args=ARGSONEARGFUNCTION)
-        multiThread(function=localTwoArgFunction, args=ARGSTWOARGFUNCTION)
-        multiThreadTQDM(function=localOneArgFunction, args=ARGSONEARGFUNCTION)
-        multiThreadTQDM(function=localTwoArgFunction, args=ARGSTWOARGFUNCTION)
-        with pytest.raises(AttributeError):
-            parallelProcess(localOneArgFunction, args=ARGSONEARGFUNCTION)
-        with pytest.raises(AttributeError):
-            parallelProcess(localTwoArgFunction, args=ARGSTWOARGFUNCTION)
-        with pytest.raises(AttributeError):
-            parallelProcessTQDM(localOneArgFunction, args=ARGSONEARGFUNCTION)
-        with pytest.raises(AttributeError):
-            parallelProcessTQDM(localTwoArgFunction, args=ARGSTWOARGFUNCTION)
+        threading(function=localTwoArgFunction, args=ARGSTWOARGFUNCTION)
 
-    def test_unsetnJobsoverrideCPUCountIsTrue(self):
+    def test_LocalZeroArgFunctionProcesses(self, processes):
+        """Confirms that local zero arg functions fail to pickle and thus aren't passed to process pools."""
+
+        def localZeroArgFunction():  # pragma: no cover
+            # Processes fail to pickle local functions and thus this code is never reached
+            pass
+
+        with pytest.raises(AttributeError):
+            processes(function=localZeroArgFunction, args=ARGSZEROARGFUNCTION)
+
+    def test_LocalOneArgFunctionProcesses(self, processes):
+        """Confirms that local one arg functions fail to pickle and thus aren't passed to process pools."""
+
+        def localOneArgFunction(x):  # pragma: no cover
+            # Processes fail to pickle local functions and thus this code is never reached
+            pass
+
+        with pytest.raises(AttributeError):
+            processes(localOneArgFunction, args=ARGSONEARGFUNCTION)
+
+    def test_LocalTwoArgFunctionProcesses(self, processes):
+        """Confirms that local two arg functions fail to pickle and thus aren't passed to process pools."""
+
+        def localTwoArgFunction(x, y):  # pragma: no cover
+            # Processes fail to pickle local functions and thus this code is never reached
+            pass
+
+        with pytest.raises(AttributeError):
+            processes(localTwoArgFunction, args=ARGSTWOARGFUNCTION)
+
+    def test_unsetnJobsoverrideCPUCountIsTrue(
+        self, parallelism, function, args, output
+    ):
         """Confirms that a warning is raised if nJobs is unset while overrideCPUCount is True."""
-        with pytest.warns(RuntimeWarning):
-            multiThread(
-                function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
+        with pytest.warns(UserWarning):
+            assert (
+                parallelism(function=function, args=args, overrideCPUCount=True)
+                == output
             )
-        with pytest.warns(RuntimeWarning):
-            multiThread(
-                function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
-            )
-        with pytest.warns(RuntimeWarning):
-            multiThreadTQDM(
-                function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
-            )
-        with pytest.warns(RuntimeWarning):
-            multiThreadTQDM(
-                function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
-            )
-        with pytest.warns(RuntimeWarning):
-            parallelProcess(
-                function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
-            )
-        with pytest.warns(RuntimeWarning):
-            parallelProcess(
-                function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
-            )
-        with pytest.warns(RuntimeWarning):
-            parallelProcessTQDM(
-                function=oneArgFunction, args=ARGSONEARGFUNCTION, overrideCPUCount=True
-            )
-        with pytest.warns(RuntimeWarning):
-            parallelProcessTQDM(
-                function=twoArgFunction, args=ARGSTWOARGFUNCTION, overrideCPUCount=True
-            )
+
+    def test_chunkSizeWithZeroArgFunction(self, parallelism, function, args, output):
+        """Confirms that a warning is raised if chunkSize is set for a 0 argument function."""
+        if function == zeroArgFunction:
+            with pytest.warns(UserWarning):
+                assert parallelism(function=function, args=args, chunkSize=1) == output

@@ -1,18 +1,36 @@
 import nox
 
-nox.options.sessions = ["lint", "coverageTests"]
+nox.options.sessions = ["lint", "coverageTestsReport"]
 
 
-@nox.session
+@nox.session(reuse_venv=False)
 def lint(session):
+    session.install(".")
     session.install("ruff")
-    session.run("ruff", "check", "--fix")
-    session.run("ruff", "format")
-    session.run("ruff", "clean")
+    session.install("pylint")
+    session.run(
+        "ruff",
+        "check",
+        "--fix",
+    )
+    session.run(
+        "ruff",
+        "format",
+    )
+    (
+        session.run(
+            "ruff",
+            "clean",
+        ),
+    )
+    session.run("pylint", "./src/basicParallelize")
 
 
-@nox.session(python=["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"])
-def coverageTests(session):
+@nox.session(
+    python=["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"],
+    reuse_venv=False,
+)
+def coverageTestsReport(session):
     session.install(".")
     session.install("coverage")
     session.install("pytest")
@@ -22,14 +40,38 @@ def coverageTests(session):
         "--branch",
         "--module",
         "pytest",
+        "--verbose",
+        "-ra",
+    )
+    session.run(
+        "coverage",
+        "report",
+        "-m",
+    )
+
+
+@nox.session(reuse_venv=False)
+def genbadge(session):
+    session.install(".")
+    session.install("coverage")
+    session.install("pytest")
+    session.install("genbadge[all]")
+    session.run(
+        "coverage",
+        "run",
+        "--branch",
+        "--module",
+        "pytest",
+        "--verbose",
+        "-ra",
         "--junit-xml=reports/tests/junit.xml",
     )
-    session.run("coverage", "xml", "-o", "reports/coverage/coverage.xml")
-
-
-@nox.session
-def genbadge(session):
-    session.install("genbadge[all]")
+    session.run(
+        "coverage",
+        "xml",
+        "-o",
+        "reports/coverage/coverage.xml",
+    )
     session.run(
         "genbadge",
         "tests",
