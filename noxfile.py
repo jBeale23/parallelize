@@ -40,6 +40,8 @@ def coverageTestsReport(session):
         "--branch",
         "--module",
         "pytest",
+        "--verbose",
+        "-ra",
     )
     session.run(
         "coverage",
@@ -60,6 +62,8 @@ def genbadge(session):
         "--branch",
         "--module",
         "pytest",
+        "--verbose",
+        "-ra",
         "--junit-xml=reports/tests/junit.xml",
     )
     session.run(
