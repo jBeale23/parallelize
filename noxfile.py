@@ -1,13 +1,17 @@
+import argparse
+
 import nox
 
 nox.options.sessions = ["lint", "coverageTestsReport"]
 
 
 @nox.session(reuse_venv=False)
-def lint(session) -> None:
+def lint(session: nox.Session) -> None:
+    """Automatically lints the repository using ruff and pylint."""
     session.install(".")
     session.install("ruff")
     session.install("pylint")
+    session.install("pytest")
     session.run(
         "ruff",
         "check",
@@ -24,13 +28,16 @@ def lint(session) -> None:
         ),
     )
     session.run("pylint", "./src/basicParallelize")
+    session.run("pylint", "./tests")
 
 
 @nox.session(
+    requires=["lint"],
     python=["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"],
     reuse_venv=False,
 )
-def coverageTestsReport(session) -> None:
+def test(session: nox.Session) -> None:
+    """Automatically tests the repository and determines coverage for Python 3.8+."""
     session.install(".")
     session.install("coverage")
     session.install("pytest")
@@ -43,6 +50,7 @@ def coverageTestsReport(session) -> None:
         "--verbose",
         "-ra",
         "--strict-markers",
+        "tests/testParallelize.py",
     )
     session.run(
         "coverage",
@@ -51,8 +59,8 @@ def coverageTestsReport(session) -> None:
     )
 
 
-@nox.session(reuse_venv=False)
-def genbadge(session) -> None:
+@nox.session(requires=["lint"], reuse_venv=False)
+def genbadge(session: nox.Session) -> None:
     session.install(".")
     session.install("coverage")
     session.install("pytest")
@@ -67,6 +75,7 @@ def genbadge(session) -> None:
         "-ra",
         "--strict-markers",
         "--junit-xml=reports/tests/junit.xml",
+        "tests/testParallelize.py",
     )
     session.run(
         "coverage",
@@ -88,10 +97,35 @@ def genbadge(session) -> None:
     )
 
 
-@nox.session(reuse_venv=False)
-def release(session) -> None:
-    session.install("build")
-    session.install("twine")
-    session.run("python", "-m", "build")
-    session.run("python", "-m", "twine", "upload", "dist/*")
-    session.run("rm", "dist/*")
+@nox.session(requires=["genbadge"], reuse_venv=False)
+def updateDev(session: nox.Session) -> None:
+    """Automates release process for the dev branch.
+
+    Invokes bump-my-version with the posarg setting the version.
+
+    Usage:
+        $ nox -s updateDev -- [major|minor|patch]
+    """
+    parser = argparse.ArgumentParser(description="Release a semver version.")
+    parser.add_argument(
+        "version",
+        type=str,
+        nargs=1,
+        help="The type of semver release to make.",
+        choices={"major", "minor", "patch"},
+    )
+    args: argparse.Namespace = parser.parse_args(args=session.posargs)
+    version: str = args.version.pop()
+
+    confirm = input(
+        f"You are about to bump the {version!r} version. Are you sure? [y/n]: "
+    )
+
+    if confirm.lower().strip() != "y":
+        session.error(f"You said no when prompted to bump the {version!r} version.")
+
+    session.log(f"Bumping the {version!r} version")
+    session.install("bump-my-version")
+    session.run("bump-my-version", "bump", version)
+    session.run("git", "push", external=True)
+
