@@ -127,6 +127,7 @@ class TestKnownFailStates:
         AttrributeError: Attempting to pass a local function to a process pool.
     The following warnings are known:
         UserWarning: Setting overrideCPUCount to True while nJobs is unset.
+        UserWarning: Specifying chunkSize while passing a function that requires no arguments.
     """
 
     def test_TypeErrorTwoArgsToOneArgFunction(self, parallelism):
