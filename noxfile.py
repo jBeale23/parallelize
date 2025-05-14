@@ -61,6 +61,7 @@ def test(session: nox.Session) -> None:
 
 @nox.session(requires=["lint"], reuse_venv=False)
 def genbadge(session: nox.Session) -> None:
+    """Generates coverage and test badges."""
     session.install(".")
     session.install("coverage")
     session.install("pytest")
