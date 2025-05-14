@@ -4,7 +4,7 @@ nox.options.sessions = ["lint", "coverageTestsReport"]
 
 
 @nox.session(reuse_venv=False)
-def lint(session):
+def lint(session) -> None:
     session.install(".")
     session.install("ruff")
     session.install("pylint")
@@ -30,7 +30,7 @@ def lint(session):
     python=["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"],
     reuse_venv=False,
 )
-def coverageTestsReport(session):
+def coverageTestsReport(session) -> None:
     session.install(".")
     session.install("coverage")
     session.install("pytest")
@@ -42,6 +42,7 @@ def coverageTestsReport(session):
         "pytest",
         "--verbose",
         "-ra",
+        "--strict-markers",
     )
     session.run(
         "coverage",
@@ -51,7 +52,7 @@ def coverageTestsReport(session):
 
 
 @nox.session(reuse_venv=False)
-def genbadge(session):
+def genbadge(session) -> None:
     session.install(".")
     session.install("coverage")
     session.install("pytest")
@@ -64,6 +65,7 @@ def genbadge(session):
         "pytest",
         "--verbose",
         "-ra",
+        "--strict-markers",
         "--junit-xml=reports/tests/junit.xml",
     )
     session.run(
@@ -84,3 +86,11 @@ def genbadge(session):
         "--input-file=reports/coverage/coverage.xml",
         "--output-file=reports/coverage/coverage-badge.svg",
     )
+
+@nox.session(reuse_venv=False)
+def release(session) -> None:
+    session.install("build")
+    session.install("twine")
+    session.run("python","-m","build")
+    session.run("python","-m", "twine", "upload", "dist/*")
+    session.run("rm", "dist/*")
