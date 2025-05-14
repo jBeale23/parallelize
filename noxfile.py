@@ -97,7 +97,7 @@ def genbadge(session: nox.Session) -> None:
     )
 
 
-@nox.session(requires=["genbadge"], reuse_venv=False)
+@nox.session(reuse_venv=True)
 def updateDev(session: nox.Session) -> None:
     """Automates release process for the dev branch.
 
@@ -128,4 +128,3 @@ def updateDev(session: nox.Session) -> None:
     session.install("bump-my-version")
     session.run("bump-my-version", "bump", version)
     session.run("git", "push", external=True)
-
