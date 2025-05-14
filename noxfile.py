@@ -87,10 +87,11 @@ def genbadge(session) -> None:
         "--output-file=reports/coverage/coverage-badge.svg",
     )
 
+
 @nox.session(reuse_venv=False)
 def release(session) -> None:
     session.install("build")
     session.install("twine")
-    session.run("python","-m","build")
-    session.run("python","-m", "twine", "upload", "dist/*")
+    session.run("python", "-m", "build")
+    session.run("python", "-m", "twine", "upload", "dist/*")
     session.run("rm", "dist/*")
