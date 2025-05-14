@@ -1,6 +1,5 @@
 """pytest suite for basicParallelize
 
-Includes tests for equivalency to serial execution in class TestOutputEquivalency.
 Includes tests for branch points in class TestBranchPoints.
 Includes tests for known errors and warnings in class TestKnownFailStates.
 """
@@ -32,14 +31,17 @@ ARGSTWOARGFUNCTION = [
 
 # Global Functions for Output Equivalency Testing
 def zeroArgFunction() -> int:
+    """An example zero argument functions that always returns 1."""
     return 1
 
 
 def oneArgFunction(x: int) -> int:
+    """An example one argument function that squares its input."""
     return x**2
 
 
 def twoArgFunction(x: int, y: int) -> int:
+    """An example two argument function that sums its inputs."""
     return x + y
 
 
@@ -49,8 +51,9 @@ OUTPUTONEARGFUNCTION = [oneArgFunction(i) for i in ARGSONEARGFUNCTION]
 OUTPUTTWOARGFUNCTION = [twoArgFunction(*i) for i in ARGSTWOARGFUNCTION]
 
 
-# Metafunction for parametrizing tests
-def pytest_generate_tests(metafunc):
+# C0103 Is disabled to successfully use the pytest_generate_tests hook function for parameterization.
+def pytest_generate_tests(metafunc):  # pylint: disable=invalid-name
+    """Metafunction to automate parameterization of tests."""
     if "threading" in metafunc.fixturenames:
         metafunc.parametrize("threading", [multiThread, multiThreadTQDM])
     if "processes" in metafunc.fixturenames:
@@ -69,19 +72,25 @@ def pytest_generate_tests(metafunc):
                 (twoArgFunction, ARGSTWOARGFUNCTION, OUTPUTTWOARGFUNCTION),
             ],
         )
+    if "chunkableFunction" in metafunc.fixturenames:
+        metafunc.parametrize(
+            "chunkableFunction, args, output",
+            [
+                (oneArgFunction, ARGSONEARGFUNCTION, OUTPUTONEARGFUNCTION),
+                (twoArgFunction, ARGSTWOARGFUNCTION, OUTPUTTWOARGFUNCTION),
+            ],
+        )
 
 
-class TestOutputEquivalency:
+def testOutPutEquivalency(parallelism, function, args, output):
     """Tests all function variants for equivalency to serial computation."""
-
-    def test_outPutEquivalency(self, parallelism, function, args, output):
-        assert parallelism(function=function, args=args) == output
+    assert parallelism(function=function, args=args) == output
 
 
 class TestBranchPoints:
     """Ensures that all branch points are reached."""
 
-    def test_setnJobsoverrideCPUCountIsFalse(self, parallelism, function, args, output):
+    def testSetnJobsoverrideCPUCountIsFalse(self, parallelism, function, args, output):
         """Confirms that nJobs can be set without errors while overrideCPUCount is False."""
         assert (
             parallelism(
@@ -93,7 +102,7 @@ class TestBranchPoints:
             == output
         )
 
-    def test_setnJobsoverrideCPUCountIsTrue(self, parallelism, function, args, output):
+    def testSetnJobsoverrideCPUCountIsTrue(self, parallelism, function, args, output):
         """Confirms that nJobs can be set without errors while overrideCPUCount is True."""
         assert (
             parallelism(
@@ -105,16 +114,15 @@ class TestBranchPoints:
             == output
         )
 
-    def test_setchunkSize(self, parallelism, function, args, output):
+    def testSetChunkSize(self, parallelism, chunkableFunction, args, output):
         """Confirms that chunk sizes can be set without errors."""
-        if function != zeroArgFunction:
-            assert parallelism(function=function, args=args, chunkSize=1) == output
+        assert parallelism(function=chunkableFunction, args=args, chunkSize=1) == output
 
-    def test_autochunkSizeWithExtra(self, parallelism, function, args, output):
+    def testAutoChunkSizeWithExtra(self, parallelism, function, args, output):
         """Confirms that chunk sizes can be left to default values when args don't divide evenly."""
         assert parallelism(function=function, args=args) == output
 
-    def test_autochunkSizeNoExtra(self, parallelism, function, args, output):
+    def testAutoChunkSizeNoExtra(self, parallelism, function, args, output):
         """Confirms that chunk sizes can be left to default values when args divide evenly."""
         assert parallelism(function=function, args=args[:8], nJobs=2) == output[:8]
 
@@ -130,41 +138,41 @@ class TestKnownFailStates:
         UserWarning: Specifying chunkSize while passing a function that requires no arguments.
     """
 
-    def test_TypeErrorTwoArgsToOneArgFunction(self, parallelism):
+    def testTypeErrorTwoArgsToOneArgFunction(self, parallelism):
         """Confirms that one argument functions don't accept multiple arguments."""
         with pytest.raises(TypeError):
             parallelism(function=oneArgFunction, args=ARGSTWOARGFUNCTION)
 
-    def test_TypeErrorOneArgToTwoArgFunction(self, parallelism):
+    def testTypeErrorOneArgToTwoArgFunction(self, parallelism):
         """Confirms that multi argument functions don't accept only one argument."""
         with pytest.raises(TypeError):
             parallelism(function=twoArgFunction, args=ARGSONEARGFUNCTION)
 
-    def test_LocalZeroArgFunctionThreads(self, threading):
+    def testLocalZeroArgFunctionThreads(self, threading):
         """Confirms that local zero arg functions can be safely passed to thread pools."""
 
         def localZeroArgFunction():
-            pass
+            return 1
 
         threading(function=localZeroArgFunction, args=ARGSZEROARGFUNCTION)
 
-    def test_LocalOneArgFunctionThreads(self, threading):
+    def testLocalOneArgFunctionThreads(self, threading):
         """Confirms that local one arg functions can be safely passed to thread pools."""
 
         def localOneArgFunction(x):
-            pass
+            return x**2
 
         threading(function=localOneArgFunction, args=ARGSONEARGFUNCTION)
 
-    def test_LocalTwoArgFunctionThreads(self, threading):
+    def testLocalTwoArgFunctionThreads(self, threading):
         """Confirms that local two arg functions can be safely passed to thread pools."""
 
         def localTwoArgFunction(x, y):
-            pass
+            return x + y
 
         threading(function=localTwoArgFunction, args=ARGSTWOARGFUNCTION)
 
-    def test_LocalZeroArgFunctionProcesses(self, processes):
+    def testLocalZeroArgFunctionProcesses(self, processes):
         """Confirms that local zero arg functions fail to pickle and thus aren't passed to process pools."""
 
         def localZeroArgFunction():  # pragma: no cover
@@ -174,29 +182,27 @@ class TestKnownFailStates:
         with pytest.raises(AttributeError):
             processes(function=localZeroArgFunction, args=ARGSZEROARGFUNCTION)
 
-    def test_LocalOneArgFunctionProcesses(self, processes):
+    def testLocalOneArgFunctionProcesses(self, processes):
         """Confirms that local one arg functions fail to pickle and thus aren't passed to process pools."""
 
-        def localOneArgFunction(x):  # pragma: no cover
+        def localOneArgFunction(_x):  # pragma: no cover
             # Processes fail to pickle local functions and thus this code is never reached
             pass
 
         with pytest.raises(AttributeError):
             processes(localOneArgFunction, args=ARGSONEARGFUNCTION)
 
-    def test_LocalTwoArgFunctionProcesses(self, processes):
+    def testLocalTwoArgFunctionProcesses(self, processes):
         """Confirms that local two arg functions fail to pickle and thus aren't passed to process pools."""
 
-        def localTwoArgFunction(x, y):  # pragma: no cover
+        def localTwoArgFunction(_x, _y):  # pragma: no cover
             # Processes fail to pickle local functions and thus this code is never reached
             pass
 
         with pytest.raises(AttributeError):
             processes(localTwoArgFunction, args=ARGSTWOARGFUNCTION)
 
-    def test_unsetnJobsoverrideCPUCountIsTrue(
-        self, parallelism, function, args, output
-    ):
+    def testUnsetnJobsCverrideCPUCountIsTrue(self, parallelism, function, args, output):
         """Confirms that a warning is raised if nJobs is unset while overrideCPUCount is True."""
         with pytest.warns(UserWarning):
             assert (
@@ -204,8 +210,12 @@ class TestKnownFailStates:
                 == output
             )
 
-    def test_chunkSizeWithZeroArgFunction(self, parallelism, function, args, output):
+    def testChunkSizeWithZeroArgFunction(self, parallelism):
         """Confirms that a warning is raised if chunkSize is set for a 0 argument function."""
-        if function == zeroArgFunction:
-            with pytest.warns(UserWarning):
-                assert parallelism(function=function, args=args, chunkSize=1) == output
+        with pytest.warns(UserWarning):
+            assert (
+                parallelism(
+                    function=zeroArgFunction, args=ARGSZEROARGFUNCTION, chunkSize=1
+                )
+                == OUTPUTZEROARGFUNCTION
+            )
