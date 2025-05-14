@@ -2,7 +2,7 @@ import argparse
 
 import nox
 
-nox.options.sessions = ["lint", "coverageTestsReport"]
+nox.options.sessions = ["lint", "test"]
 
 
 @nox.session(reuse_venv=False)
