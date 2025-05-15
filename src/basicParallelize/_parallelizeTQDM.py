@@ -57,7 +57,7 @@ def parallelProcessTQDM(  # pylint: disable=too-many-arguments
     )
 
     with multiprocessing.Pool(processes=nJobs) as pool:
-        print(f"Starting parallel pool with {nJobs} processes.".format(nJobs=nJobs))
+        print(f"Starting parallel pool with {nJobs} processes.")
         result = _flexibleMapTQDM(
             pool=pool,
             function=function,
@@ -118,7 +118,7 @@ def multiThreadTQDM(  # pylint: disable=too-many-arguments
     )
 
     with multiprocessing.pool.ThreadPool(processes=nJobs) as pool:
-        print(f"Starting parallel pool with {nJobs} threads.".format(nJobs=nJobs))
+        print(f"Starting parallel pool with {nJobs} threads.")
         result = _flexibleMapTQDM(
             pool=pool,
             function=function,
