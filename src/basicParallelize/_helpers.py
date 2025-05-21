@@ -142,6 +142,12 @@ def _flexibleMap(
     List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
+    # Generators are unsupported as their internal state must be known to parallelize calls to them
+    # which would negate the purpose of calling the generator in the first place.
+    # See https://stackoverflow.com/questions/7972295/python-generator-unpack-entire-generator-in-parallel
+    if inspect.isgeneratorfunction(function):
+        raise TypeError("Generator functions are not supported.")
+
     if len(inspect.signature(function).parameters) > 1:
         result: List[Any] = pool.starmap(
             func=function, iterable=args, chunksize=chunkSize
@@ -186,6 +192,12 @@ def _flexibleMapTQDM(
     List[Any]
         The outputs of the specified function across the iterable, in the provided order.
     """
+    # Generators are unsupported as their internal state must be known to parallelize calls to them
+    # which would negate the purpose of calling the generator in the first place.
+    # See https://stackoverflow.com/questions/7972295/python-generator-unpack-entire-generator-in-parallel
+    if inspect.isgeneratorfunction(function):
+        raise TypeError("Generator functions are not supported.")
+
     if len(inspect.signature(function).parameters) > 1:
         result: List[Any] = list(
             tqdm.tqdm(
