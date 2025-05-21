@@ -6,35 +6,41 @@ import inspect
 import multiprocessing
 import multiprocessing.pool
 import warnings
-from typing import Any, Callable, Iterable, List
+from typing import Any, Callable, Sequence
 
 import tqdm
 
 
 def _determineChunkSize(
     function: Callable[[Any], Any],
-    args: Iterable[Any] | Iterable[Iterable[Any]],
-    nJobs: int | None = None,
+    args: Sequence[Any] | Sequence[Sequence[Any]],
+    nJobs: int,
     chunkSize: int | None = None,
-) -> int:
+) -> int | None:
     """Determines appropriate chunk size for distributing the total work across the parallel pool.
 
     Parameters
     ----------
-    args: Iterable[Any] | Iterable[Iterable[Any]]
-        An iterable of parameters to pass to the target function.
+    args: Sequence[Any] | Sequence[Sequence[Any]]
+        A sequence of parameters to pass to the target function.
     nJobs: int | None
         The number of processes or threads to start simultaneously.
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
         If unspecified, defaults to system logical CPU count.
     chunkSize: int | None
-        The number of function executions on the iterable to pass to each process or thread.
+        The number of function executions on the sequence to pass to each process or thread.
         If unspecified, defaults to heuristic calculation of divmod(len(args), nJobs * 4).
 
     Returns
     -------
     int
-        The number of function executions on the iterable to send to each process or thread.
+        The number of function executions on the sequence to send to each process or thread.
+
+    Warnings
+    --------
+    UserWarning
+        If `chunkSize` is specified while `function` requires no parameters, a warning is issued to notify users that
+        the specified `chunkSize` has no effect.
     """
 
     if len(inspect.signature(function).parameters) != 0:
@@ -70,7 +76,7 @@ def _determineNJobs(
         Capped by system CPU count and 61 to avoid bottlenecking and Windows errors respectively.
         If unspecified, defaults to system logical CPU count.
     overrideCPUCount: bool
-        If set to True, the user provided nJobs is used as the number of processes to start simultaneously.
+        If set to True, the user provided `nJobs` is used as the number of processes to start simultaneously.
         This is done regardless of system resources available or possible Windows errors.
         Defaults to False.
 
@@ -78,6 +84,12 @@ def _determineNJobs(
     -------
     int
         The number of processes or threads to start simultaneously.
+
+    Warnings
+    --------
+    UserWarning
+        If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
+        may have forgotten to specify `nJobs` or unintentinally specified `overrideCPUCount`.
     """
     if nJobs is None and overrideCPUCount is True:
         warnings.warn(
@@ -85,19 +97,17 @@ def _determineNJobs(
             UserWarning,
         )
     if nJobs is None:
-        nJobs: int = multiprocessing.cpu_count()
-    if overrideCPUCount is True:
-        nJobs: int = nJobs
-    else:
+        nJobs = multiprocessing.cpu_count()
+    if overrideCPUCount is False:
         # The cap at 61 is due to possible windows errors.
         # See https://github.com/python/cpython/issues/71090
-        nJobs: int = min(nJobs, multiprocessing.cpu_count(), 61)
+        nJobs = min(nJobs, multiprocessing.cpu_count(), 61)
     return nJobs
 
 
 def _fStar(
     function: Callable[[Any], Any],
-    args: Iterable[Any] | Iterable[Iterable[Any]],
+    args: Sequence[Any] | Sequence[Sequence[Any]],
 ) -> Callable[[Any], Any]:
     """Starmap a function with provided arguments.
 
@@ -105,7 +115,7 @@ def _fStar(
     ----------
     function : Callable[[Any], Any]
         The function to pass arguments to.
-    args : Iterable[Any] | Iterable[Iterable[Any]]
+    args : Sequence[Any] | Sequence[Sequence[Any]]
         The arguments to unpack.
 
     Returns
@@ -118,51 +128,51 @@ def _fStar(
 
 def _flexibleMap(
     pool: multiprocessing.pool.Pool | multiprocessing.pool.ThreadPool,
-    function: Callable[[], Any] | Callable[[Any], Any],
-    args: Iterable[Any] | Iterable[Iterable[Any]],
-    chunkSize: int,
-) -> List[Any]:
+    function: Callable[..., Any],
+    args: Sequence[Any] | Sequence[Sequence[Any]],
+    chunkSize: int | None,
+) -> list[Any]:
     """Automatically determine the appropriate map type for a function and process arguments in parallel.
 
     Parameters
     ----------
     pool: multiprocessing.pool.Pool | multiprocessing.pool.ThreadPool
         The pool or threadpool whose workers are used for parallel processing.
-    function: Callable[[], Any] | Callable[[Any], Any]
+    function: Callable[..., Any]
         The function to run in parallel.
-    args: Iterable[Any] | Iterable[Iterable[Any]]
-        An iterable of parameters to pass to the function.
-        If the function requires more than one parameter, they must be provided in the form of an iterable of iterables.
-        If the function requires no parameters, the length of the iterable determines the number of function executions.
+    args: Sequence[Any] | Sequence[Sequence[Any]]
+        A sequence of parameters to pass to the function.
+        If the function requires more than one parameter, they must be provided in the form of a sequence of sequences.
+        If the function requires no parameters, the length of the sequence determines the number of function executions.
     chunkSize: int
-        The number of function executions on the iterable to pass to each process.
+        The number of function executions on the sequence to pass to each process.
 
     Returns
     -------
-    List[Any]
-        The outputs of the specified function across the iterable, in the provided order.
+    list[Any]
+        The outputs of the specified function across the sequence, in the provided order.
     """
     if len(inspect.signature(function).parameters) > 1:
-        result: List[Any] = pool.starmap(
+        result: list[Any] = pool.starmap(
             func=function, iterable=args, chunksize=chunkSize
         )
     elif len(inspect.signature(function).parameters) == 1:
-        result: List[Any] = pool.map(func=function, iterable=args, chunksize=chunkSize)
+        result: list[Any] = pool.map(func=function, iterable=args, chunksize=chunkSize)
     else:
-        result: List[multiprocessing.pool.ApplyResult] = list(
+        _result: list[multiprocessing.pool.ApplyResult] = list(
             pool.apply_async(func=function) for __ in range(len(args))
         )
-        result: List[Any] = [item.get() for item in result]
+        result: list[Any] = [item.get() for item in _result]
     return result
 
 
 def _flexibleMapTQDM(
     pool: multiprocessing.pool.Pool | multiprocessing.pool.ThreadPool,
-    function: Callable[[], Any] | Callable[[Any], Any],
-    args: Iterable[Any] | Iterable[Iterable[Any]],
-    chunkSize: int,
+    function: Callable[..., Any],
+    args: Sequence[Any] | Sequence[Sequence[Any]],
+    chunkSize: int | None,
     description: str | None = None,
-) -> List[Any]:
+) -> list[Any]:
     """Automatically determine the appropriate map type for a function and process arguments in parallel.
     Used with TQDM variants of multiThreading and parallelProcess
 
@@ -170,24 +180,24 @@ def _flexibleMapTQDM(
     ----------
     pool: multiprocessing.pool.Pool | multiprocessing.pool.ThreadPool
         The pool or threadpool whose workers are used for parallel processing.
-    function: Callable[[], Any] | Callable[[Any], Any]
+    function: Callable[..., Any]
         The function to run in parallel.
-    args: Iterable[Any] | Iterable[Iterable[Any]]
-        An iterable of parameters to pass to the function.
-        If the function requires more than one parameter, they must be provided in the form of an iterable of iterables.
-        If the function requires no parameters, the length of the iterable determines the number of function executions.
+    args: Sequence[Any] | Sequence[Sequence[Any]]
+        A sequence of parameters to pass to the function.
+        If the function requires more than one parameter, they must be provided in the form of a sequence of sequences.
+        If the function requires no parameters, the length of the sequence determines the number of function executions.
     chunkSize: int
-        The number of function executions on the iterable to pass to each process.
+        The number of function executions on the sequence to pass to each process.
     description: str | None
         If present, sets the string to display on the TQDM progress bar.
 
     Returns
     -------
-    List[Any]
-        The outputs of the specified function across the iterable, in the provided order.
+    list[Any]
+        The outputs of the specified function across the sequence, in the provided order.
     """
     if len(inspect.signature(function).parameters) > 1:
-        result: List[Any] = list(
+        result: list[Any] = list(
             tqdm.tqdm(
                 pool.imap(
                     func=functools.partial(_fStar, function),
@@ -199,7 +209,7 @@ def _flexibleMapTQDM(
             )
         )
     elif len(inspect.signature(function).parameters) == 1:
-        result: List[Any] = list(
+        result: list[Any] = list(
             tqdm.tqdm(
                 pool.imap(func=function, iterable=args, chunksize=chunkSize),
                 total=len(args),
@@ -207,12 +217,12 @@ def _flexibleMapTQDM(
             )
         )
     else:
-        result: List[multiprocessing.pool.ApplyResult] = list(
+        _result: list[multiprocessing.pool.ApplyResult] = list(
             tqdm.tqdm(
                 (pool.apply_async(func=function) for __ in range(len(args))),
                 total=len(args),
                 desc=description,
             )
         )
-        result: List[Any] = [item.get() for item in result]
+        result: list[Any] = [item.get() for item in _result]
     return result
