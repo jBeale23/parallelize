@@ -151,6 +151,13 @@ def _flexibleMap(
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
+
+    Raises
+    ------
+    TypeError
+        If a generator function is provided as 'function' a TypeError is raised.
+        They are intentionally unsupported as parallelization of calls to non trivial generators
+        requires knowledge of the generator's internal state.
     """
     # Generators are unsupported as their internal state must be known to parallelize calls to them
     # which would negate the purpose of calling the generator in the first place.
@@ -201,6 +208,13 @@ def _flexibleMapTQDM(
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
+
+    Raises
+    ------
+    TypeError
+        If a generator function is provided as 'function' a TypeError is raised.
+        They are intentionally unsupported as parallelization of calls to non trivial generators
+        requires knowledge of the generator's internal state.
     """
     # Generators are unsupported as their internal state must be known to parallelize calls to them
     # which would negate the purpose of calling the generator in the first place.

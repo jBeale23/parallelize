@@ -102,6 +102,13 @@ def multiThread(
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
 
+    Raises
+    ------
+    TypeError
+        If a generator function is provided as 'function' a TypeError is raised.
+        They are intentionally unsupported as parallelization of calls to non trivial generators
+        requires knowledge of the generator's internal state.
+
     Warnings
     --------
     UserWarning
