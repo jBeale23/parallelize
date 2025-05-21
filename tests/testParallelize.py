@@ -124,7 +124,9 @@ def pytest_generate_tests(metafunc) -> None:  # pylint: disable=invalid-name
 class TestOutputEquivalency:
     """Tests all parallelism variants for equivalency to serial computation."""
 
-    def testOutPutEquivalencyFunctions(self, parallelism, function, args, output) -> None:
+    def testOutPutEquivalencyFunctions(
+        self, parallelism, function, args, output
+    ) -> None:
         """Tests output equivalency to serial computation of functions."""
         assert parallelism(function=function, args=args) == output
 
