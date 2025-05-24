@@ -41,3 +41,18 @@ message = "Bump version: {current_version} → {new_version}"
 
 [[tool.bumpversion.files]]
 filename = "./src/basicParallelize/__init__.py"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "D",
+    "I",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

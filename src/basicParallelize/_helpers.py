@@ -1,6 +1,7 @@
 """Helper functions for shared logic between _parallelize.py and _parallelizeTQDM.py."""
 
 from __future__ import annotations
+
 import functools
 import inspect
 import multiprocessing
@@ -31,18 +32,17 @@ def _determineChunkSize(
         The number of function executions on the sequence to pass to each process or thread.
         If unspecified, defaults to heuristic calculation of divmod(len(args), nJobs * 4).
 
-    Returns
+    Returns:
     -------
     int
         The number of function executions on the sequence to send to each process or thread.
 
-    Warnings
+    Warnings:
     --------
     UserWarning
         If `chunkSize` is specified while `function` requires no parameters, a warning is issued to notify users that
         the specified `chunkSize` has no effect.
     """
-
     if len(inspect.signature(function).parameters) != 0:
         # Used as a default to reduce worker overhead.
         # Consider specifying smaller chunk sizes for small datasets.
@@ -80,12 +80,12 @@ def _determineNJobs(
         This is done regardless of system resources available or possible Windows errors.
         Defaults to False.
 
-    Returns
+    Returns:
     -------
     int
         The number of processes or threads to start simultaneously.
 
-    Warnings
+    Warnings:
     --------
     UserWarning
         If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
@@ -118,7 +118,7 @@ def _fStar(
     args : Sequence[Any] | Sequence[Sequence[Any]]
         The arguments to unpack.
 
-    Returns
+    Returns:
     -------
     function(*args) : Callable[[Any],Any]
         The specified function with arguments unpacked and passed to it.
@@ -147,12 +147,12 @@ def _flexibleMap(
     chunkSize: int
         The number of function executions on the sequence to pass to each process.
 
-    Returns
+    Returns:
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
 
-    Raises
+    Raises:
     ------
     TypeError
         If a generator function is provided as 'function' a TypeError is raised.
@@ -166,9 +166,7 @@ def _flexibleMap(
         raise TypeError("Generator functions are not supported.")
 
     if len(inspect.signature(function).parameters) > 1:
-        result: list[Any] = pool.starmap(
-            func=function, iterable=args, chunksize=chunkSize
-        )
+        result: list[Any] = pool.starmap(func=function, iterable=args, chunksize=chunkSize)
     elif len(inspect.signature(function).parameters) == 1:
         result: list[Any] = pool.map(func=function, iterable=args, chunksize=chunkSize)
     else:
@@ -186,8 +184,7 @@ def _flexibleMapTQDM(
     chunkSize: int | None,
     description: str | None = None,
 ) -> list[Any]:
-    """Automatically determine the appropriate map type for a function and process arguments in parallel.
-    Used with TQDM variants of multiThreading and parallelProcess
+    """Automatically determine the appropriate map type for a function and process arguments in TQDM parallelisms.
 
     Parameters
     ----------
@@ -204,17 +201,16 @@ def _flexibleMapTQDM(
     description: str | None
         If present, sets the string to display on the TQDM progress bar.
 
-    Returns
+    Returns:
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
 
-    Raises
+    Raises:
     ------
     TypeError
         If a generator function is provided as 'function' a TypeError is raised.
-        They are intentionally unsupported as parallelization of calls to non trivial generators
-        requires knowledge of the generator's internal state.
+        Generators are unsupported as parallelization requires knowledge of their internal state.
     """
     # Generators are unsupported as their internal state must be known to parallelize calls to them
     # which would negate the purpose of calling the generator in the first place.

@@ -1,17 +1,21 @@
-"""pytest suite for basicParallelize
+"""pytest suite for basicParallelize.
 
 Includes tests for branch points in class TestBranchPoints.
 Includes tests for known errors and warnings in class TestKnownFailStates.
 """
 
 from __future__ import annotations
-from typing import Literal
+
+from typing import Any, Generator, Literal, NoReturn
+
 import pytest
 
-from basicParallelize import multiThread
-from basicParallelize import multiThreadTQDM
-from basicParallelize import parallelProcess
-from basicParallelize import parallelProcessTQDM
+from basicParallelize import (
+    multiThread,
+    multiThreadTQDM,
+    parallelProcess,
+    parallelProcessTQDM,
+)
 
 # Constant Inputs for Output Equivalency Testing
 ARGSZEROARGFUNCTION = range(11)
@@ -48,7 +52,7 @@ def twoArgFunction(x: int, y: int) -> int:
 
 
 # Global Generator Functions for Known Failure Testing
-def zeroArgGenerator():  # pragma: no cover
+def zeroArgGenerator() -> Generator[int, Any, NoReturn]:  # pragma: no cover
     # Generator functions are not supported and thus will never be executed.
     """An example zero argument generator that yields an infinite sequence."""
     num = 0
@@ -57,7 +61,7 @@ def zeroArgGenerator():  # pragma: no cover
         num += 1
 
 
-def oneArgGenerator(limit: int):  # pragma: no cover
+def oneArgGenerator(limit: int) -> Generator[int, Any, None]:  # pragma: no cover
     # Generator functions are not supported and thus will never be executed.
     """An example one argument generator that yields the highest fibonnaci value below the limit."""
     a, b = 0, 1
@@ -66,7 +70,7 @@ def oneArgGenerator(limit: int):  # pragma: no cover
         a, b = b, a + b
 
 
-def twoArgGenerator(start: int, end: int):  # pragma: no cover
+def twoArgGenerator(start: int, end: int) -> Generator[int, Any, None]:  # pragma: no cover
     # Generator functions are not supported and thus will never be executed.
     """An example two argument generator that yields numbers within a specified range."""
     while start <= end:
@@ -124,14 +128,12 @@ def pytest_generate_tests(metafunc) -> None:  # pylint: disable=invalid-name
 class TestOutputEquivalency:
     """Tests all parallelism variants for equivalency to serial computation."""
 
-    def testOutPutEquivalencyFunctions(
-        self, parallelism, function, args, output
-    ) -> None:
+    def testOutPutEquivalencyFunctions(self, parallelism, function, args, output) -> None:
         """Tests output equivalency to serial computation of functions."""
         assert parallelism(function=function, args=args) == output
 
     @pytest.mark.skip("Skipped as methods testing has not yet been implemented.")
-    def testOutPutEquivalencyMethods(self, parallelism, method, args, output):
+    def testOutPutEquivalencyMethods(self, parallelism, method, args, output) -> None:
         """Tests output equivalency to serial computation of methods."""
         assert parallelism(function=method, args=args) == output
 
@@ -139,9 +141,7 @@ class TestOutputEquivalency:
 class TestBranchPoints:
     """Ensures that all branch points are reached."""
 
-    def testSetnJobsoverrideCPUCountIsFalse(
-        self, parallelism, function, args, output
-    ) -> None:
+    def testSetnJobsoverrideCPUCountIsFalse(self, parallelism, function, args, output) -> None:
         """Confirms that nJobs can be set without errors while overrideCPUCount is False."""
         assert (
             parallelism(
@@ -153,9 +153,7 @@ class TestBranchPoints:
             == output
         )
 
-    def testSetnJobsoverrideCPUCountIsTrue(
-        self, parallelism, function, args, output
-    ) -> None:
+    def testSetnJobsoverrideCPUCountIsTrue(self, parallelism, function, args, output) -> None:
         """Confirms that nJobs can be set without errors while overrideCPUCount is True."""
         assert (
             parallelism(
@@ -181,7 +179,7 @@ class TestBranchPoints:
 
 
 class TestKnownFailStates:
-    """Tests for known failure states and warnings:
+    """Tests for known failure states and warnings.
 
     The following failure states are known:
         AttrributeError: Attempting to pass a local function to a process pool.
@@ -256,27 +254,17 @@ class TestKnownFailStates:
         with pytest.raises(AttributeError):
             processes(function=localTwoArgFunction, args=ARGSTWOARGFUNCTION)
 
-    def testUnsetnJobsCverrideCPUCountIsTrue(
-        self, parallelism, function, args, output
-    ) -> None:
+    def testUnsetnJobsCverrideCPUCountIsTrue(self, parallelism, function, args, output) -> None:
         """Confirms that a warning is raised if nJobs is unset while overrideCPUCount is True."""
         with pytest.warns(UserWarning):
-            assert (
-                parallelism(function=function, args=args, overrideCPUCount=True)
-                == output
-            )
+            assert parallelism(function=function, args=args, overrideCPUCount=True) == output
 
     def testChunkSizeWithZeroArgFunction(self, parallelism) -> None:
         """Confirms that a warning is raised if chunkSize is set for a 0 argument function."""
         with pytest.warns(UserWarning):
-            assert (
-                parallelism(
-                    function=zeroArgFunction, args=ARGSZEROARGFUNCTION, chunkSize=1
-                )
-                == OUTPUTZEROARGFUNCTION
-            )
+            assert parallelism(function=zeroArgFunction, args=ARGSZEROARGFUNCTION, chunkSize=1) == OUTPUTZEROARGFUNCTION
 
-    def testTypeErrorGeneratorFunction(self, parallelism, generator, args):
+    def testTypeErrorGeneratorFunction(self, parallelism, generator, args) -> None:
         """Confirms that a TypeError is raised if a generator function is passed to a parallelism."""
         with pytest.raises(TypeError):
             parallelism(function=generator, args=args)

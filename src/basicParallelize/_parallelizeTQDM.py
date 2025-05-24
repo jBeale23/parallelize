@@ -1,11 +1,12 @@
 """Wrappers for multiprocessing.Pool and multiprocessing.pool.ThreadPool with TQDM progress bar integration."""
 
 from __future__ import annotations
+
 import multiprocessing
 import multiprocessing.pool
 from typing import Any, Callable, Sequence
 
-from ._helpers import _determineNJobs, _determineChunkSize, _flexibleMapTQDM
+from ._helpers import _determineChunkSize, _determineNJobs, _flexibleMapTQDM
 
 
 # R0913 Too-Many-Arguments warning is disabled as providing a single contact point for end users is the goal.
@@ -19,8 +20,7 @@ def parallelProcessTQDM(  # pylint: disable=too-many-arguments
     overrideCPUCount: bool = False,
     description: str | None = None,
 ) -> list[Any]:
-    """Creates a parallel pool with up to 'nJobs' processes to run a provided function on each element of a sequence.
-    Displays a TQDM progress bar.
+    """Creates a process pool to run a provided function on each element of a sequence with TQDM.
 
     Parameters
     ----------
@@ -44,26 +44,26 @@ def parallelProcessTQDM(  # pylint: disable=too-many-arguments
     description: str | None
         If present, sets the string to display on the TQDM progress bar.
 
-    Returns
+    Returns:
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
 
-    Raises
+    Raises:
     ------
     TypeError
         If a generator function is provided as 'function' a TypeError is raised.
         They are intentionally unsupported as parallelization of calls to non trivial generators
         requires knowledge of the generator's internal state.
 
-    Raises
+    Raises:
     ------
     TypeError
         If a generator function is provided as 'function' a TypeError is raised.
         They are intentionally unsupported as parallelization of calls to non trivial generators
         requires knowledge of the generator's internal state.
 
-    Warnings
+    Warnings:
     --------
     UserWarning
         If `chunkSize` is specified while `function` requires no parameters, a warning is issued to notify users that
@@ -72,11 +72,13 @@ def parallelProcessTQDM(  # pylint: disable=too-many-arguments
         If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
         may have forgotten to specify `nJobs` or unintentinally specified `overrideCPUCount`.
     """
-
     nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
 
     chunkSize = _determineChunkSize(
-        function=function, args=args, nJobs=nJobs, chunkSize=chunkSize
+        function=function,
+        args=args,
+        nJobs=nJobs,
+        chunkSize=chunkSize,
     )
 
     with multiprocessing.Pool(processes=nJobs) as pool:
@@ -103,8 +105,7 @@ def multiThreadTQDM(  # pylint: disable=too-many-arguments
     overrideCPUCount: bool = False,
     description: str | None = None,
 ) -> list[Any]:
-    """Creates a parallel pool with up to 'nJobs' threads to run a provided function on each element of a sequence.
-    Displays a TQDM progress bar.
+    """Creates a thread pool to run a provided function on each element of a sequence with TQDM.
 
     Parameters
     ----------
@@ -128,19 +129,19 @@ def multiThreadTQDM(  # pylint: disable=too-many-arguments
     description: str | None
         If present, sets the string to display on the TQDM progress bar.
 
-    Returns
+    Returns:
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
 
-    Raises
+    Raises:
     ------
     TypeError
         If a generator function is provided as 'function' a TypeError is raised.
         They are intentionally unsupported as parallelization of calls to non trivial generators
         requires knowledge of the generator's internal state.
 
-    Warnings
+    Warnings:
     --------
     UserWarning
         If `chunkSize` is specified while `function` requires no parameters, a warning is issued to notify users that
@@ -149,11 +150,13 @@ def multiThreadTQDM(  # pylint: disable=too-many-arguments
         If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
         may have forgotten to specify `nJobs` or unintentinally specified `overrideCPUCount`.
     """
-
     nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
 
     chunkSize = _determineChunkSize(
-        function=function, args=args, nJobs=nJobs, chunkSize=chunkSize
+        function=function,
+        args=args,
+        nJobs=nJobs,
+        chunkSize=chunkSize,
     )
 
     with multiprocessing.pool.ThreadPool(processes=nJobs) as pool:

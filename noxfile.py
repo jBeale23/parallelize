@@ -1,3 +1,5 @@
+"""Nox configuration for basicParallelize."""
+
 import argparse
 
 import nox
@@ -12,20 +14,14 @@ def lint(session: nox.Session) -> None:
     session.install("ruff")
     session.install("pylint")
     session.install("pytest")
-    session.run(
-        "ruff",
-        "check",
-        "--fix",
-    )
+    session.run("ruff", "check", "--fix", "--select", "I")
     session.run(
         "ruff",
         "format",
     )
-    (
-        session.run(
-            "ruff",
-            "clean",
-        ),
+    session.run(
+        "ruff",
+        "clean",
     )
     session.run("pylint", "./src/basicParallelize")
     session.run("pylint", "./tests")
@@ -118,9 +114,7 @@ def updateDev(session: nox.Session) -> None:
     args: argparse.Namespace = parser.parse_args(args=session.posargs)
     version: str = args.version.pop()
 
-    confirm = input(
-        f"You are about to bump the {version!r} version. Are you sure? [y/n]: "
-    )
+    confirm: str = input(f"You are about to bump the {version!r} version. Are you sure? [y/n]: ")
 
     if confirm.lower().strip() != "y":
         session.error(f"You said no when prompted to bump the {version!r} version.")

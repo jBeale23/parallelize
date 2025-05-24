@@ -1,11 +1,12 @@
 """Wrappers for multiprocessing.Pool and multiprocessing.pool.ThreadPool with TQDM progress bar integration."""
 
 from __future__ import annotations
+
 import multiprocessing
 import multiprocessing.pool
 from typing import Any, Callable, Sequence
 
-from ._helpers import _determineNJobs, _determineChunkSize, _flexibleMap
+from ._helpers import _determineChunkSize, _determineNJobs, _flexibleMap
 
 
 def parallelProcess(
@@ -38,12 +39,12 @@ def parallelProcess(
         This is done regardless of system resources available or possible Windows errors.
         Defaults to False.
 
-    Returns
+    Returns:
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
 
-    Warnings
+    Warnings:
     --------
     UserWarning
         If `chunkSize` is specified while `function` requires no parameters, a warning is issued to notify users that
@@ -52,17 +53,12 @@ def parallelProcess(
         If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
         may have forgotten to specify `nJobs` or unintentinally specified `overrideCPUCount`.
     """
-
     nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
 
-    chunkSize = _determineChunkSize(
-        function=function, args=args, nJobs=nJobs, chunkSize=chunkSize
-    )
+    chunkSize = _determineChunkSize(function=function, args=args, nJobs=nJobs, chunkSize=chunkSize)
 
     with multiprocessing.Pool(processes=nJobs) as pool:
-        result: list[Any] = _flexibleMap(
-            pool=pool, function=function, args=args, chunkSize=chunkSize
-        )
+        result: list[Any] = _flexibleMap(pool=pool, function=function, args=args, chunkSize=chunkSize)
 
     return result
 
@@ -97,19 +93,19 @@ def multiThread(
         This is done regardless of system resources available or possible Windows errors.
         Defaults to False.
 
-    Returns
+    Returns:
     -------
     list[Any]
         The outputs of the specified function across the sequence, in the provided order.
 
-    Raises
+    Raises:
     ------
     TypeError
         If a generator function is provided as 'function' a TypeError is raised.
         They are intentionally unsupported as parallelization of calls to non trivial generators
         requires knowledge of the generator's internal state.
 
-    Warnings
+    Warnings:
     --------
     UserWarning
         If `chunkSize` is specified while `function` requires no parameters, a warning is issued to notify users that
@@ -118,16 +114,11 @@ def multiThread(
         If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
         may have forgotten to specify `nJobs` or unintentinally specified `overrideCPUCount`.
     """
-
     nJobs = _determineNJobs(nJobs=nJobs, overrideCPUCount=overrideCPUCount)
 
-    chunkSize = _determineChunkSize(
-        function=function, args=args, nJobs=nJobs, chunkSize=chunkSize
-    )
+    chunkSize = _determineChunkSize(function=function, args=args, nJobs=nJobs, chunkSize=chunkSize)
 
     with multiprocessing.pool.ThreadPool(processes=nJobs) as pool:
-        result: list[Any] = _flexibleMap(
-            pool=pool, function=function, args=args, chunkSize=chunkSize
-        )
+        result: list[Any] = _flexibleMap(pool=pool, function=function, args=args, chunkSize=chunkSize)
 
     return result
