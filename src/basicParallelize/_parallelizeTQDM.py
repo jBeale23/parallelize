@@ -9,9 +9,9 @@ from typing import Any, Callable, Sequence
 from ._helpers import _determineChunkSize, _determineNJobs, _flexibleMapTQDM
 
 
-# R0913 Too-Many-Arguments warning is disabled as providing a single contact point for end users is the goal.
+# PLR0913 Too-Many-Arguments warning is disabled as providing a single contact point for end users is the goal.
 # Sensible defaults are provided to reduce mental burden while still allowing customization for advanced use.
-def parallelProcessTQDM(  # pylint: disable=too-many-arguments
+def parallelProcessTQDM(  # noqa: PLR0913
     function: Callable[..., Any],
     args: Sequence[Any] | Sequence[Sequence[Any]],
     *,
@@ -82,7 +82,6 @@ def parallelProcessTQDM(  # pylint: disable=too-many-arguments
     )
 
     with multiprocessing.Pool(processes=nJobs) as pool:
-        print(f"Starting parallel pool with {nJobs} processes.")
         result: list[Any] = _flexibleMapTQDM(
             pool=pool,
             function=function,
@@ -94,9 +93,9 @@ def parallelProcessTQDM(  # pylint: disable=too-many-arguments
     return result
 
 
-# R0913 Too-Many-Arguments warning is disabled as providing a single contact point for end users is the goal.
+# PLR0913 Too-Many-Arguments warning is disabled as providing a single contact point for end users is the goal.
 # Sensible defaults are provided to reduce mental burden while still allowing customization for advanced use.
-def multiThreadTQDM(  # pylint: disable=too-many-arguments
+def multiThreadTQDM(  # noqa: PLR0913
     function: Callable[..., Any],
     args: Sequence[Any] | Sequence[Sequence[Any]],
     *,
@@ -160,7 +159,6 @@ def multiThreadTQDM(  # pylint: disable=too-many-arguments
     )
 
     with multiprocessing.pool.ThreadPool(processes=nJobs) as pool:
-        print(f"Starting parallel pool with {nJobs} threads.")
         result: list[Any] = _flexibleMapTQDM(
             pool=pool,
             function=function,

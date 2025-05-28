@@ -1,6 +1,6 @@
 """Wrappers for the multiprocessing module's Pool and ThreadPool classes, including support for TQDM."""
 
-__all__ = ["parallelProcess", "parallelProcessTQDM", "multiThread", "multiThreadTQDM"]
+__all__ = ["multiThread", "multiThreadTQDM", "parallelProcess", "parallelProcessTQDM"]
 __version__ = "1.1.1"
 __author__ = "Joshua Beale <jbeale2023@gmail.com>"
 

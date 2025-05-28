@@ -211,7 +211,7 @@ class TestKnownFailStates:
     def testLocalOneArgFunctionThreads(self, threading) -> None:
         """Confirms that local one arg functions can be safely passed to thread pools."""
 
-        def localOneArgFunction(x: int | float) -> int | float:
+        def localOneArgFunction(x: float) -> int | float:
             return x**2
 
         threading(function=localOneArgFunction, args=ARGSONEARGFUNCTION)
@@ -219,7 +219,7 @@ class TestKnownFailStates:
     def testLocalTwoArgFunctionThreads(self, threading) -> None:
         """Confirms that local two arg functions can be safely passed to thread pools."""
 
-        def localTwoArgFunction(x: int | float, y: int | float) -> int | float:
+        def localTwoArgFunction(x: float, y: float) -> int | float:
             return x + y
 
         threading(function=localTwoArgFunction, args=ARGSTWOARGFUNCTION)

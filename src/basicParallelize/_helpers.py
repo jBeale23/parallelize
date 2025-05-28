@@ -13,6 +13,7 @@ import tqdm
 
 
 def _determineChunkSize(
+    *,
     function: Callable[[Any], Any],
     args: Sequence[Any] | Sequence[Sequence[Any]],
     nJobs: int,
@@ -53,17 +54,18 @@ def _determineChunkSize(
             chunkSize, extra = divmod(len(args), nJobs * 4)
             if extra:
                 chunkSize += 1
-    else:
-        if chunkSize is not None:
-            warnings.warn(
-                "chunkSize is set while the function requires no parameters. Ignoring chunkSize.",
-                UserWarning,
-            )
+    elif chunkSize is not None:
+        warnings.warn(
+            "chunkSize is set while the function requires no parameters. Ignoring chunkSize.",
+            UserWarning,
+            stacklevel=2,
+        )
 
     return chunkSize
 
 
 def _determineNJobs(
+    *,
     nJobs: int | None = None,
     overrideCPUCount: bool = False,
 ) -> int:
@@ -95,6 +97,7 @@ def _determineNJobs(
         warnings.warn(
             "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
             UserWarning,
+            stacklevel=2,
         )
     if nJobs is None:
         nJobs = multiprocessing.cpu_count()
@@ -127,6 +130,7 @@ def _fStar(
 
 
 def _flexibleMap(
+    *,
     pool: multiprocessing.pool.Pool | multiprocessing.pool.ThreadPool,
     function: Callable[..., Any],
     args: Sequence[Any] | Sequence[Sequence[Any]],
@@ -163,21 +167,21 @@ def _flexibleMap(
     # which would negate the purpose of calling the generator in the first place.
     # See https://stackoverflow.com/questions/7972295/python-generator-unpack-entire-generator-in-parallel
     if inspect.isgeneratorfunction(function):
-        raise TypeError("Generator functions are not supported.")
+        msg: str = "Generator functions are intentionally unsupported."
+        raise TypeError(msg)
 
     if len(inspect.signature(function).parameters) > 1:
         result: list[Any] = pool.starmap(func=function, iterable=args, chunksize=chunkSize)
     elif len(inspect.signature(function).parameters) == 1:
-        result: list[Any] = pool.map(func=function, iterable=args, chunksize=chunkSize)
+        result = pool.map(func=function, iterable=args, chunksize=chunkSize)
     else:
-        _result: list[multiprocessing.pool.ApplyResult] = list(
-            pool.apply_async(func=function) for __ in range(len(args))
-        )
-        result: list[Any] = [item.get() for item in _result]
+        _result: list[multiprocessing.pool.ApplyResult] = [pool.apply_async(func=function) for __ in range(len(args))]
+        result = [item.get() for item in _result]
     return result
 
 
 def _flexibleMapTQDM(
+    *,
     pool: multiprocessing.pool.Pool | multiprocessing.pool.ThreadPool,
     function: Callable[..., Any],
     args: Sequence[Any] | Sequence[Sequence[Any]],
@@ -216,7 +220,8 @@ def _flexibleMapTQDM(
     # which would negate the purpose of calling the generator in the first place.
     # See https://stackoverflow.com/questions/7972295/python-generator-unpack-entire-generator-in-parallel
     if inspect.isgeneratorfunction(function):
-        raise TypeError("Generator functions are not supported.")
+        msg: str = "Generator functions are intentionally unsupported."
+        raise TypeError(msg)
 
     if len(inspect.signature(function).parameters) > 1:
         result: list[Any] = list(
@@ -231,7 +236,7 @@ def _flexibleMapTQDM(
             )
         )
     elif len(inspect.signature(function).parameters) == 1:
-        result: list[Any] = list(
+        result = list(
             tqdm.tqdm(
                 pool.imap(func=function, iterable=args, chunksize=chunkSize),
                 total=len(args),
@@ -246,5 +251,5 @@ def _flexibleMapTQDM(
                 desc=description,
             )
         )
-        result: list[Any] = [item.get() for item in _result]
+        result = [item.get() for item in _result]
     return result

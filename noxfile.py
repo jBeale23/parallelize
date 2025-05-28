@@ -9,12 +9,11 @@ nox.options.sessions = ["lint", "test"]
 
 @nox.session(reuse_venv=False)
 def lint(session: nox.Session) -> None:
-    """Automatically lints the repository using ruff and pylint."""
+    """Automatically lints the repository using ruff."""
     session.install(".")
     session.install("ruff")
-    session.install("pylint")
     session.install("pytest")
-    session.run("ruff", "check", "--fix", "--select", "I")
+    session.run("ruff", "check", "--fix")
     session.run(
         "ruff",
         "format",
@@ -23,8 +22,6 @@ def lint(session: nox.Session) -> None:
         "ruff",
         "clean",
     )
-    session.run("pylint", "./src/basicParallelize")
-    session.run("pylint", "./tests")
 
 
 @nox.session(

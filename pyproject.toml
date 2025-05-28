@@ -1,29 +1,25 @@
 [project]
 name = "basicParallelize"
 version = "1.1.1"
-authors = [
-  { name="Joshua Beale", email="jbeale2023@gmail.com" },
-]
+authors = [{ name = "Joshua Beale", email = "jbeale2023@gmail.com" }]
 description = "Wrappers for multiprocessing's Pool and ThreadPool classes."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
-    "Intended Audience :: Developers",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Operating System :: OS Independent",
-    "Topic :: Utilities",
+	"Intended Audience :: Developers",
+	"Programming Language :: Python",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
+	"Operating System :: OS Independent",
+	"Topic :: Utilities",
 ]
 keywords = ["parallel"]
-dependencies = [
-    "tqdm>=2.0.0"
-]
+dependencies = ["tqdm>=2.0.0"]
 license = { text = "MIT" }
 
 [project.urls]
@@ -44,15 +40,48 @@ filename = "./src/basicParallelize/__init__.py"
 
 [tool.ruff]
 line-length = 120
+output-format = "grouped"
+respect-gitignore = true
+show-fixes = true
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "lf"
+quote-style = "double"
+docstring-code-format = true
 
 [tool.ruff.lint]
-select = [
-    "F",
-    "E",
-    "W",
-    "D",
-    "I",
+select = ["ALL"]
+
+ignore = [
+	"YTT",    # flake8-2020
+	"CPY",    # flake8-copyright"
+	"COM812", # missing-trailing-comma
+	"COM819", # prohibited-trailing-comma
+	"D206",   # docstring-tab-indentation
+	"D300",   # triple-single-quotes
+	"E111",   # indentation-with-invalid-multiple
+	"E114",   # indentation-with-invalid-multiple-comment
+	"E117",   # over-indented
+	"E501",   # line-too-long
+	"Q000",   # bad-quotes-inline-string
+	"Q001",   # bad-quotes-multiline-string
+	"Q002",   # bad-quotes-docstring
+	"Q003",   # avoidable-escaped-quote
+	"W191",   # tab-indentation
+	# Naming convention ignores
+	"N801",
+	"N802",
+	"N803",
+	"N806",
+	"N999",
 ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore unused imports in __init__.py files
+"__init__.py" = ["F401"]
+# Allow assert statments in test*.py files, allow its uses as an explicit namespace, and don't enforce type hinting for tests
+"test*.py" = ["S101", "ANN", "INP001"]
