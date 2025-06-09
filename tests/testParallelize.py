@@ -1,6 +1,7 @@
 """pytest suite for basicParallelize.
 
 Includes tests for branch points in class TestBranchPoints.
+Includes tests for methods in class TestClassAndInstanceMethods
 Includes tests for known errors and warnings in class TestKnownFailStates.
 """
 
@@ -37,7 +38,7 @@ ARGSTWOARGFUNCTION: list[tuple[int, int]] = [
 
 # Global Functions for Output Equivalency Testing
 def zeroArgFunction() -> int:
-    """An example zero argument functions that always returns 1."""
+    """An example zero argument function that always returns 1."""
     return 1
 
 
@@ -51,9 +52,44 @@ def twoArgFunction(x: int, y: int) -> int:
     return x + y
 
 
+class MethodsTestClass:
+    """A class containing methods for testing parallelisms."""
+
+    SomeClassData: int = 0
+
+    def __init__(self, parameter: int) -> None:
+        """Instantiates a MethodsTestClass with some trivial parameter."""
+        self.parameter = parameter
+        MethodsTestClass.SomeClassData += 1
+
+    def returnParameter(self) -> int:
+        """Retrieves the trivial parameter of an instance of MethodsTestClass."""
+        return self.parameter
+
+    @classmethod
+    def retrieveInstanceCount(cls) -> int:
+        """Retrieves the current count of instances of the MethodsTestClass."""
+        return cls.SomeClassData
+
+    @staticmethod
+    def zeroArgStaticMethod() -> int:
+        """An example zero argument method that always returns 1."""
+        return 1
+
+    @staticmethod
+    def oneArgStaticMethod(x: int) -> int:
+        """An example one argument method that squares its input."""
+        return x**2
+
+    @staticmethod
+    def twoArgStaticMethod(x: int, y: int) -> int:
+        """An example two argument method that sums its inputs."""
+        return x + y
+
+
 # Global Generator Functions for Known Failure Testing
 def zeroArgGenerator() -> Generator[int, Any, NoReturn]:  # pragma: no cover
-    # Generator functions are not supported and thus will never be executed.
+    # Generator functions are intentionally unsupported and thus will never be executed.
     """An example zero argument generator that yields an infinite sequence."""
     num = 0
     while True:
@@ -84,8 +120,7 @@ OUTPUTONEARGFUNCTION: list[int] = [oneArgFunction(i) for i in ARGSONEARGFUNCTION
 OUTPUTTWOARGFUNCTION: list[int] = [twoArgFunction(*i) for i in ARGSTWOARGFUNCTION]
 
 
-# C0103 Is disabled to successfully use the pytest_generate_tests hook function for parameterization.
-def pytest_generate_tests(metafunc) -> None:  # pylint: disable=invalid-name
+def pytest_generate_tests(metafunc) -> None:
     """Metafunction to automate parameterization of tests."""
     if "threading" in metafunc.fixturenames:
         metafunc.parametrize("threading", [multiThread, multiThreadTQDM])
@@ -123,6 +158,15 @@ def pytest_generate_tests(metafunc) -> None:  # pylint: disable=invalid-name
                 (twoArgGenerator, ARGSTWOARGFUNCTION),
             ],
         )
+    if "staticMethod" in metafunc.fixturenames:
+        metafunc.parametrize(
+            "staticMethod, args, output",
+            [
+                (MethodsTestClass.zeroArgStaticMethod, ARGSZEROARGFUNCTION, OUTPUTZEROARGFUNCTION),
+                (MethodsTestClass.oneArgStaticMethod, ARGSONEARGFUNCTION, OUTPUTONEARGFUNCTION),
+                (MethodsTestClass.twoArgStaticMethod, ARGSTWOARGFUNCTION, OUTPUTTWOARGFUNCTION),
+            ],
+        )
 
 
 class TestOutputEquivalency:
@@ -132,10 +176,27 @@ class TestOutputEquivalency:
         """Tests output equivalency to serial computation of functions."""
         assert parallelism(function=function, args=args) == output
 
-    @pytest.mark.skip("Skipped as methods testing has not yet been implemented.")
-    def testOutPutEquivalencyMethods(self, parallelism, method, args, output) -> None:
-        """Tests output equivalency to serial computation of methods."""
-        assert parallelism(function=method, args=args) == output
+    def testOutPutEquivalencyStaticMethods(self, parallelism, staticMethod, args, output) -> None:
+        """Tests output equivalency to serial computation of static methods."""
+        assert parallelism(function=staticMethod, args=args) == output
+
+
+class TestClassAndInstanceMethods:
+    """Tests all parallelism variants with class and instance methods."""
+
+    InstanceOfMethodsTestClass = MethodsTestClass(1)
+
+    def testInstanceMethod(self, parallelism) -> None:
+        """Tests that instance methods can be used with parallelisms."""
+        assert parallelism(self.InstanceOfMethodsTestClass.returnParameter, ARGSZEROARGFUNCTION) == [
+            1 for __ in ARGSZEROARGFUNCTION
+        ]
+
+    def testClassMethod(self, parallelism) -> None:
+        """Tests that class methods can be used with parallelisms."""
+        assert parallelism(MethodsTestClass.retrieveInstanceCount, ARGSZEROARGFUNCTION) == [
+            1 for __ in ARGSZEROARGFUNCTION
+        ]
 
 
 class TestBranchPoints:
