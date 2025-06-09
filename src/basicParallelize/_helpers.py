@@ -14,7 +14,7 @@ import tqdm
 
 def _determineChunkSize(
     *,
-    function: Callable[[Any], Any],
+    function: Callable[..., Any],
     args: Sequence[Any] | Sequence[Sequence[Any]],
     nJobs: int,
     chunkSize: int | None = None,
@@ -23,6 +23,8 @@ def _determineChunkSize(
 
     Parameters
     ----------
+    function: Callable[..., Any]
+        The function being run in parallel.
     args: Sequence[Any] | Sequence[Sequence[Any]]
         A sequence of parameters to pass to the target function.
     nJobs: int | None
@@ -93,13 +95,13 @@ def _determineNJobs(
         If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
         may have forgotten to specify `nJobs` or unintentinally specified `overrideCPUCount`.
     """
-    if nJobs is None and overrideCPUCount is True:
-        warnings.warn(
-            "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
-            UserWarning,
-            stacklevel=2,
-        )
     if nJobs is None:
+        if overrideCPUCount is True:
+            warnings.warn(
+                "nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count.",
+                UserWarning,
+                stacklevel=2,
+            )
         nJobs = multiprocessing.cpu_count()
     if overrideCPUCount is False:
         # The cap at 61 is due to possible windows errors.
@@ -109,21 +111,21 @@ def _determineNJobs(
 
 
 def _fStar(
-    function: Callable[[Any], Any],
+    function: Callable[..., Any],
     args: Sequence[Any] | Sequence[Sequence[Any]],
-) -> Callable[[Any], Any]:
+) -> Callable[..., Any]:
     """Starmap a function with provided arguments.
 
     Parameters
     ----------
-    function : Callable[[Any], Any]
+    function : Callable[..., Any]
         The function to pass arguments to.
     args : Sequence[Any] | Sequence[Sequence[Any]]
         The arguments to unpack.
 
     Returns:
     -------
-    function(*args) : Callable[[Any],Any]
+    function(*args) : Callable[..., Any]
         The specified function with arguments unpacked and passed to it.
     """
     return function(*args)
@@ -170,9 +172,9 @@ def _flexibleMap(
         msg: str = "Generator functions are intentionally unsupported."
         raise TypeError(msg)
 
-    if len(inspect.signature(function).parameters) > 1:
+    if (numParams := len(inspect.signature(function).parameters)) > 1:
         result: list[Any] = pool.starmap(func=function, iterable=args, chunksize=chunkSize)
-    elif len(inspect.signature(function).parameters) == 1:
+    elif numParams == 1:
         result = pool.map(func=function, iterable=args, chunksize=chunkSize)
     else:
         _result: list[multiprocessing.pool.ApplyResult] = [pool.apply_async(func=function) for __ in range(len(args))]
@@ -223,7 +225,7 @@ def _flexibleMapTQDM(
         msg: str = "Generator functions are intentionally unsupported."
         raise TypeError(msg)
 
-    if len(inspect.signature(function).parameters) > 1:
+    if (numParams := len(inspect.signature(function).parameters)) > 1:
         result: list[Any] = list(
             tqdm.tqdm(
                 pool.imap(
@@ -235,7 +237,7 @@ def _flexibleMapTQDM(
                 desc=description,
             )
         )
-    elif len(inspect.signature(function).parameters) == 1:
+    elif numParams == 1:
         result = list(
             tqdm.tqdm(
                 pool.imap(func=function, iterable=args, chunksize=chunkSize),
