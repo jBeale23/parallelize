@@ -6,10 +6,20 @@ import functools
 import inspect
 import multiprocessing
 import multiprocessing.pool
+import os
 import warnings
 from typing import Any, Callable, Sequence
 
 import tqdm
+
+
+def _determineAllocatedCPUs() -> int:
+    """Determines if Slurm is active and sets the appropriate maximum CPU count if it is."""
+    if "SLURM_CPUS_PER_TASK" in os.environ:
+        availableCPUs: int = int(os.environ["SLURM_CPUS_PER_TASK"])
+    else:
+        availableCPUs = multiprocessing.cpu_count()
+    return availableCPUs
 
 
 def _determineChunkSize(
@@ -93,7 +103,7 @@ def _determineNJobs(
     --------
     UserWarning
         If `nJobs` is None while `overrideCPUCount` is True, a warning is issued to notify users that they
-        may have forgotten to specify `nJobs` or unintentinally specified `overrideCPUCount`.
+        may have forgotten to specify `nJobs` or unintentionally specified `overrideCPUCount`.
     """
     if nJobs is None:
         if overrideCPUCount is True:
@@ -102,11 +112,11 @@ def _determineNJobs(
                 UserWarning,
                 stacklevel=2,
             )
-        nJobs = multiprocessing.cpu_count()
+        nJobs = _determineAllocatedCPUs()
     if overrideCPUCount is False:
         # The cap at 61 is due to possible windows errors.
         # See https://github.com/python/cpython/issues/71090
-        nJobs = min(nJobs, multiprocessing.cpu_count(), 61)
+        nJobs = min(nJobs, _determineAllocatedCPUs(), 61)
     return nJobs
 
 
