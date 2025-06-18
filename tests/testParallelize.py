@@ -317,15 +317,19 @@ class TestKnownFailStates:
 
     def testUnsetnJobsCverrideCPUCountIsTrue(self, parallelism, function, args, output) -> None:
         """Confirms that a warning is raised if nJobs is unset while overrideCPUCount is True."""
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning, match="nJobs is unset while overrideCPUCount is True, defaulting to system logical CPU Count."
+        ):
             assert parallelism(function=function, args=args, overrideCPUCount=True) == output
 
     def testChunkSizeWithZeroArgFunction(self, parallelism) -> None:
         """Confirms that a warning is raised if chunkSize is set for a 0 argument function."""
-        with pytest.warns(UserWarning):
+        with pytest.warns(
+            UserWarning, match="chunkSize is set while the function requires no parameters. Ignoring chunkSize."
+        ):
             assert parallelism(function=zeroArgFunction, args=ARGSZEROARGFUNCTION, chunkSize=1) == OUTPUTZEROARGFUNCTION
 
     def testTypeErrorGeneratorFunction(self, parallelism, generator, args) -> None:
         """Confirms that a TypeError is raised if a generator function is passed to a parallelism."""
-        with pytest.raises(TypeError):
+        with pytest.raises(TypeError, match="Generator functions are intentionally unsupported."):
             parallelism(function=generator, args=args)
